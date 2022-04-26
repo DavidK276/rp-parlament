@@ -1,5 +1,6 @@
 <?php
 session_start();
+// TODO: zakazat pristup neopravnenym ludom
 include('constants.php');
 include('functions.php');
 include('database.php');
@@ -8,33 +9,41 @@ include('navbar.php'); ?>
 
 <?php if (isset($_POST['submit'])) {
     $errors = array();
-    $email = sanitise($_POST['email']);
-    $role = $_POST['rola'];
-    $title = sanitise($_POST['titul']);
-    $whole_name = sanitise($_POST['cele_meno']);
-    $first_name = explode(' ', $whole_name)[0];
-    $last_name = explode(' ', $whole_name)[1];
-    $address = sanitise($_POST['adresa']);
-    $password = $_POST['heslo0'];
-    $password_repeat = $_POST['heslo1'];
-
-    // kontrola vstupu
-    if (empty($email)) $errors['email'] = "Musíte zadať email";
-    else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors['email'] = "Zadaný email má zlý formát";
-    if (empty($role)) $errors['role'] = "Musíte zvoliť rolu";
-    if (strlen($title) > 20) $errors['title'] = "Titul musí mať najviac 20 znakov";
-    if (empty($first_name)) $errors['first_name'] = "Musíte zadať meno";
-    else if (strlen($first_name) > 30) $errors['first_name'] = "Meno musí mať najviac 30 znakov";
-    if (empty($last_name)) $errors['last_name'] = "Musíte zadať priezvisko";
-    else if (strlen($last_name) > 30) $errors['last_name'] = "Priezvisko musí mať najviac 30 znakov";
-    if (empty($address)) $errors['address'] = "Musíte zadať adresu";
-    else if (strlen($address) > 50) $errors['address'] = "Adresa musí mať najviac 50 znakov";
-    if (empty($password)) $errors['password'] = "Zadajte heslo";
-    else if ($password != $password_repeat) $errors['password'] = "Heslá sa nezhodujú";
+//    $email = sanitise($_POST['email']);
+//    $role = $_POST['rola'];
+//    $title = sanitise($_POST['titul']);
+//    $whole_name = sanitise($_POST['cele_meno']);
+//    $first_name = explode(' ', $whole_name)[0];
+//    $last_name = explode(' ', $whole_name)[1];
+//    $address = sanitise($_POST['adresa']);
+//    $password = $_POST['heslo0'];
+//    $password_repeat = $_POST['heslo1'];
+//
+//    // kontrola vstupu
+//    if (empty($email)) $errors['email'] = "Musíte zadať email";
+//    else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors['email'] = "Zadaný email má zlý formát";
+//    if (empty($role)) $errors['role'] = "Musíte zvoliť rolu";
+//    if (strlen($title) > 20) $errors['title'] = "Titul musí mať najviac 20 znakov";
+//    if (empty($first_name)) $errors['first_name'] = "Musíte zadať meno";
+//    else if (strlen($first_name) > 30) $errors['first_name'] = "Meno musí mať najviac 30 znakov";
+//    if (empty($last_name)) $errors['last_name'] = "Musíte zadať priezvisko";
+//    else if (strlen($last_name) > 30) $errors['last_name'] = "Priezvisko musí mať najviac 30 znakov";
+//    if (empty($address)) $errors['address'] = "Musíte zadať adresu";
+//    else if (strlen($address) > 50) $errors['address'] = "Adresa musí mať najviac 50 znakov";
+//    if (empty($password)) $errors['password'] = "Zadajte heslo";
+//    else if ($password != $password_repeat) $errors['password'] = "Heslá sa nezhodujú";
 
     if (empty($errors)) {
         // ak je vstup platny, vlozit do databazy
-        $result = insert_user($mysqli, $email, $role, $title, $first_name, $last_name, $address, $password);
+        if ($_POST['rola'] == 'poslanec') {
+            // TODO: vyrobit pole poslanec
+            $poslanec = [];
+            $result = insert_poslanec($mysqli, $poslanec);
+        } else if ($_POST['rola'] == 'admin') {
+            // TODO: vyrobit pole admin
+            $admin = [];
+            $result = insert_admin($mysqli, $admin);
+        }
     }
 } ?>
 
@@ -53,17 +62,30 @@ include('navbar.php'); ?>
                 <div class="mb-3">
                     <label for="rola" class="form-label">Rola:</label>
                     <div id="rola">
+                        <input type="radio" name="rola" id="rola_admin" value="admin" required aria-selected="true"
+                               checked>
+                        <label for="rola_admin">Administrátor</label>
                         <input type="radio" name="rola" id="rola_poslanec" value="poslanec" required>
                         <label for="rola_poslanec">Poslanec</label>
-                        <input type="radio" name="rola" id="rola_admin" value="admin" required>
-                        <label for="rola_admin">Administrátor</label>
                         <div class="invalid-feedback">Vyberte rolu</div>
                     </div>
                 </div>
-                <div class="mb-3">
+                <div class="mb-3" hidden>
                     <label for="titul" class="form-label">Titul:</label>
                     <input type="text" class="form-control" id="titul" placeholder="Zadajte titul" name="titul"
                            value="">
+                </div>
+                <div class="mb-3" hidden>
+                    <label for="hidden_field" class="form-label">Špecializácia:</label>
+                    <input type="hidden" id="hidden_field" value="">
+                    <div class="form-check">
+                        <?php foreach (get_spec_values($mysqli) as $spec) {
+                            $l = strtolower($spec);
+                            $l = explode(' ', $l)[0];
+                            echo "<input class=\"form-check-input\" type=\"checkbox\" value=\"$l\" id=\"sp_$l\" name=\"specializacia\">
+                                    <label class=\"form-check-label\" for=\"sp_$l\">$spec</label><br>";
+                        } ?>
+                    </div>
                 </div>
                 <div class="mb-3">
                     <label for="meno_priezvisko" class="form-label">Meno a priezvisko:</label>
@@ -84,6 +106,7 @@ include('navbar.php'); ?>
                     <!--                        <div class="invalid-feedback">Zadajte heslo</div>-->
                 </div>
                 <div class="mb-3">
+                    <label for="pwd_rep" class="form-label" hidden>Zopakovať heslo:</label>
                     <input type="password" class="form-control" id="pwd_rep" placeholder="Zopakovať heslo"
                            name="heslo1" value="" required>
                     <div class="invalid-feedback" id="pwd_feedback"></div>
@@ -99,7 +122,6 @@ include('navbar.php'); ?>
 
 <?php include('footer.php'); ?>
 <script>
-    // Example starter JavaScript for disabling form submissions if there are invalid fields
     (function () {
         'use strict'
 
@@ -130,8 +152,7 @@ include('navbar.php'); ?>
                     if (address_input.value !== '' && address_input.value.length < 6) {
                         address_input.setCustomValidity('Adresa musí mať aspoň 6 znakov');
                         document.getElementById('adresa_feedback').innerHTML = 'Adresa musí mať aspoň 6 znakov';
-                    }
-                    else {
+                    } else {
                         address_input.setCustomValidity('');
                         document.getElementById('adresa_feedback').innerHTML = 'Zadajte adresu';
                     }
@@ -141,16 +162,27 @@ include('navbar.php'); ?>
                         name_input.setCustomValidity('Meno a priezvisko musia obsahovať presne dve slová');
                         document.getElementById('meno_feedback').innerHTML = 'Meno a priezvisko musia obsahovať ' +
                             'presne dve slová dlhé aspoň 3 znaky';
-                    }
-                    else {
+                    } else {
                         name_input.setCustomValidity('');
                         document.getElementById('meno_feedback').innerHTML = 'Zadajte meno a priezvisko';
                     }
                     form.classList.add('was-validated')
                 }, false)
             });
+
+
         document.getElementById('form_add_user').addEventListener('input', function () {
             document.getElementById('form_add_user').classList.remove('was-validated');
+        });
+
+        document.getElementById('rola_admin').addEventListener('click', function () {
+            document.getElementById('titul').parentElement.setAttribute('hidden', '');
+            document.getElementById('hidden_field').parentElement.setAttribute('hidden', '');
+        });
+
+        document.getElementById('rola_poslanec').addEventListener('click', function () {
+            document.getElementById('titul').parentElement.removeAttribute('hidden');
+            document.getElementById('hidden_field').parentElement.removeAttribute('hidden');
         });
     })()
 
