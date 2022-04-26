@@ -1,7 +1,7 @@
 <?php
 date_default_timezone_set('Europe/Bratislava');
 
-function head($title = 'Úvod')
+function head($title = 'Úvod'): void
 { ?>
     <!DOCTYPE html>
     <html lang="sk">
@@ -17,7 +17,7 @@ function head($title = 'Úvod')
 </header>
 <?php }
 
-function verify_user($mysqli, $email, $pswd)
+function verify_user($mysqli, $email, $pswd): int
 {
     if (!$mysqli->connect_errno) {
         $email = filter_var($email, FILTER_SANITIZE_EMAIL);
@@ -29,7 +29,7 @@ function verify_user($mysqli, $email, $pswd)
         if ($result->num_rows > 0) {
             $row = $result->fetch_assoc();
             $result->free();
-            if (password_verify($pswd, $row['heslo'])) return true;
+            if (password_verify($pswd, $row['heslo'])) return 1;
             else return -1; // nespravne heslo
         } else {
             $stmt = $mysqli->prepare('SELECT heslo FROM admin WHERE email=?');
@@ -40,7 +40,7 @@ function verify_user($mysqli, $email, $pswd)
             if ($result->num_rows > 0) {
                 $row = $result->fetch_assoc();
                 $result->free();
-                if (password_verify($pswd, $row['heslo'])) return true;
+                if (password_verify($pswd, $row['heslo'])) return 2;
                 else return -1; // nespravne heslo
             }
         }
@@ -48,43 +48,40 @@ function verify_user($mysqli, $email, $pswd)
     return -1;
 }
 
-function select_poslanec($mysqli, $email = '', $user_id = '')
+function select_poslanec($mysqli, $email = '', $user_id = ''): array
 {
     if ((!empty($email) || !empty($user_id)) && !$mysqli->connect_errno) {
         $email = filter_var($email, FILTER_SANITIZE_EMAIL);
         $stmt = $mysqli->prepare('SELECT * FROM poslanec WHERE email=? OR id=?');
-        $stmt->bind_param('si', $email, $user_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $stmt->close();
-        if ($result->num_rows > 0) {
-            $row = $result->fetch_assoc();
-            $result->free();
-            return $row;
-        } else return false; // pouzivatel sa nenasiel
+        return select_user($stmt, $email, $user_id);
     }
-    return false;
+    return [];
 }
 
-function select_admin($mysqli, $email = '', $user_id = '')
+function select_admin($mysqli, $email = '', $user_id = ''): array
 {
     if ((!empty($email) || !empty($user_id)) && !$mysqli->connect_errno) {
         $email = filter_var($email, FILTER_SANITIZE_EMAIL);
         $stmt = $mysqli->prepare('SELECT * FROM admin WHERE email=? OR id=?');
-        $stmt->bind_param('si', $email, $user_id);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $stmt->close();
-        if ($result->num_rows > 0) {
-            $row = $result->fetch_assoc();
-            $result->free();
-            return $row;
-        } else return false; // pouzivatel sa nenasiel
+        return select_user($stmt, $email, $user_id);
     }
-    return false;
+    return [];
 }
 
-function insert_poslanec($mysqli, $poslanec)
+function select_user($stmt, $email='', $user_id=''): array
+{
+    $stmt->bind_param('si', $email, $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $stmt->close();
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $result->free();
+        return $row;
+    } else return []; // pouzivatel sa nenasiel
+}
+
+function insert_poslanec($mysqli, $poslanec): bool
 {
     if (!$mysqli->connect_errno) {
         $stmt = $mysqli->prepare('INSERT INTO poslanec(id_klub, id_previerka, specializacia, email, titul, meno, priezvisko, adresa, heslo) 
@@ -98,7 +95,7 @@ function insert_poslanec($mysqli, $poslanec)
     return false;
 }
 
-function insert_admin($mysqli, $admin)
+function insert_admin($mysqli, $admin): bool
 {
     if (!$mysqli->connect_errno) {
         $stmt = $mysqli->prepare('INSERT INTO admin(id_previerka, email, meno, priezvisko, adresa, heslo)
@@ -111,7 +108,7 @@ function insert_admin($mysqli, $admin)
     return false;
 }
 
-function update_admin($mysqli, $admin)
+function update_admin($mysqli, $admin): bool
 {
     if (!$mysqli->connect_errno) {
         $old_data = select_admin($mysqli, $admin['email']);
@@ -129,7 +126,7 @@ function update_admin($mysqli, $admin)
     return false;
 }
 
-function update_poslanec($mysqli, $poslanec)
+function update_poslanec($mysqli, $poslanec): bool
 {
     if (!$mysqli->connect_errno) {
         $old_data = select_poslanec($mysqli, $poslanec['email']);
@@ -151,7 +148,7 @@ function update_poslanec($mysqli, $poslanec)
     return false;
 }
 
-function delete_admin($mysqli, $email = '', $user_id = '')
+function delete_admin($mysqli, $email = '', $user_id = ''): bool
 {
     if (!$mysqli->connect_errno) {
         if (!empty($user_id)) {
@@ -171,7 +168,7 @@ function delete_admin($mysqli, $email = '', $user_id = '')
     return false;
 }
 
-function delete_poslanec($mysqli, $email = '', $user_id = '')
+function delete_poslanec($mysqli, $email = '', $user_id = ''): bool
 {
     if (!$mysqli->connect_errno) {
         if (!empty($user_id)) {
@@ -191,7 +188,7 @@ function delete_poslanec($mysqli, $email = '', $user_id = '')
     return false;
 }
 
-function sanitise($input)
+function sanitise($input): string
 {
     return addslashes(trim(strip_tags($input)));
 }
@@ -199,7 +196,7 @@ function sanitise($input)
 /* kontroluje meno (meno a priezvisko)
 vráti TRUE, ak celé meno ($input) obsahuje práve 1 medzeru, pred a za medzerou sú časti aspoň dĺžky 3 znaky
 */
-function verify_name($input)
+function verify_name($input): bool
 {
     $space = strpos($input, ' ');
     if (!$space) return false;
@@ -207,10 +204,9 @@ function verify_name($input)
     return ($space > 2 && (!str_contains($last_name, ' ')) && strlen($last_name) > 2);
 }
 
-function get_role_values($mysqli)
+function get_spec_values($mysqli): array
 {
-    $type = $mysqli->query("SHOW COLUMNS FROM pouzivatel WHERE Field = 'rola'")->fetch_assoc()['Type'];
-    preg_match("/^enum\('(.*)'\)$/", $type, $matches);
-    $enum = explode("','", $matches[1]);
-    return $enum;
+    $type = $mysqli->query("SHOW COLUMNS FROM poslanec WHERE Field = 'specializacia'")->fetch_assoc()['Type'];
+    preg_match("/^set\('(.*)'\)$/", $type, $matches);
+    return explode("','", $matches[1]);
 }
