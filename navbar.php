@@ -24,6 +24,13 @@
                 </li>
                 <?php
                 if (isset($_SESSION[SESSION_USER])) { ?>
+                    <?php if ($_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
+                        <li class="nav-item">
+                            <a class="nav-link <?php if ($page == "newuser.php") echo 'active' ?>" href="newuser.php"
+                               tabindex="-1"
+                               aria-disabled="true">Pridať</a>
+                        </li>
+                    <?php } ?>
                     <li class="nav-item">
                         <a class="nav-link" href="logout.php">Odhlásenie</a>
                     </li>
