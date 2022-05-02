@@ -7,7 +7,9 @@ include('database.php');
 head('Pridať používateľa');
 include('navbar.php'); ?>
 
-<?php if (isset($_POST['submit'])) {
+<?php
+if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] = ROLE_ADMIN) {
+if (isset($_POST['submit'])) {
     $errors = array();
 //    $email = sanitise($_POST['email']);
 //    $role = $_POST['rola'];
@@ -36,12 +38,24 @@ include('navbar.php'); ?>
     if (empty($errors)) {
         // ak je vstup platny, vlozit do databazy
         if ($_POST['rola'] == 'poslanec') {
-            // TODO: vyrobit pole poslanec
-            $poslanec = [];
+            $poslanec = array();
+            $poslanec['email'] = sanitise($_POST['email']);
+            $poslanec['titul'] = sanitise($_POST['titul']);
+            $whole_name = sanitise($_POST['cele_meno']);
+            $poslanec['meno'] = explode(' ', $whole_name)[0];
+            $poslanec['priezvisko'] = explode(' ', $whole_name)[1];
+            $poslanec['adresa'] = sanitise($_POST['adresa']);
+            $poslanec['heslo'] = $_POST['heslo0'];
+            $poslanec['specializacia'] = implode(',', $_POST['specializacia']);
             $result = insert_poslanec($mysqli, $poslanec);
         } else if ($_POST['rola'] == 'admin') {
-            // TODO: vyrobit pole admin
-            $admin = [];
+            $admin = array();
+            $admin['email'] = sanitise($_POST['email']);
+            $whole_name = sanitise($_POST['cele_meno']);
+            $admin['meno'] = explode(' ', $whole_name)[0];
+            $admin['priezvisko'] = explode(' ', $whole_name)[1];
+            $admin['adresa'] = sanitise($_POST['adresa']);
+            $admin['heslo'] = $_POST['heslo0'];
             $result = insert_admin($mysqli, $admin);
         }
     }
@@ -82,7 +96,7 @@ include('navbar.php'); ?>
                         <?php foreach (get_spec_values($mysqli) as $spec) {
                             $l = strtolower($spec);
                             $l = explode(' ', $l)[0];
-                            echo "<input class=\"form-check-input\" type=\"checkbox\" value=\"$l\" id=\"sp_$l\" name=\"specializacia\">
+                            echo "<input class=\"form-check-input\" type=\"checkbox\" value=\"$spec\" id=\"sp_$l\" name=\"specializacia[]\">
                                     <label class=\"form-check-label\" for=\"sp_$l\">$spec</label><br>";
                         } ?>
                     </div>
@@ -119,8 +133,6 @@ include('navbar.php'); ?>
     <div class="col-md-4"></div>
     <div class="col-md-4"></div>
 </div>
-
-<?php include('footer.php'); ?>
 <script>
     (function () {
         'use strict'
@@ -192,3 +204,10 @@ include('navbar.php'); ?>
         return name_split[0].length >= 3 && name_split[1].length >= 3;
     }
 </script>
+<?php }
+else {
+    echo '<div class="row"><div class="col-md-4"><div class="container"><h3>K tejto stránke nemáte prístup.</h3></div></div></div>';
+}
+?>
+
+<?php include('footer.php'); ?>
