@@ -70,7 +70,7 @@ function select_poslanec($mysqli, $email): array
 {
     if ((!empty($email) || !empty($user_id)) && !$mysqli->connect_errno) {
         $email = filter_var($email, FILTER_SANITIZE_EMAIL);
-        $stmt = $mysqli->prepare('SELECT poslanec.*, osobne_udaje.email, meno, priezvisko, adresa, osobne_udaje.id AS `table_udaje_id` FROM osobne_udaje, poslanec WHERE osobne_udaje.id=poslanec.id_udaje AND osobne_udaje.email=?');
+        $stmt = $mysqli->prepare('SELECT poslanec.titul, osobne_udaje.email, meno, priezvisko, adresa, osobne_udaje.id AS `table_udaje_id` FROM osobne_udaje, poslanec WHERE osobne_udaje.id=poslanec.id_udaje AND osobne_udaje.email=?');
         return select_user($stmt, $email);
     }
     return [];
@@ -80,7 +80,7 @@ function select_admin($mysqli, $email): array
 {
     if ((!empty($email) || !empty($user_id)) && !$mysqli->connect_errno) {
         $email = filter_var($email, FILTER_SANITIZE_EMAIL);
-        $stmt = $mysqli->prepare('SELECT admin.*, osobne_udaje.email, meno, priezvisko, adresa, osobne_udaje.id AS `table_udaje_id` FROM osobne_udaje, admin WHERE osobne_udaje.id=admin.id_udaje AND osobne_udaje.email=?');
+        $stmt = $mysqli->prepare('SELECT osobne_udaje.email, meno, priezvisko, adresa, osobne_udaje.id AS `table_udaje_id` FROM osobne_udaje, admin WHERE osobne_udaje.id=admin.id_udaje AND osobne_udaje.email=?');
         return select_user($stmt, $email);
     }
     return [];
@@ -99,7 +99,8 @@ function select_user($stmt, $email): array
     } else return []; // pouzivatel sa nenasiel
 }
 
-function insert_osobne_udaje($mysqli, $email, $meno, $priezvisko, $adresa): int {
+function insert_osobne_udaje($mysqli, $email, $meno, $priezvisko, $adresa): int
+{
     if (!$mysqli->connect_errno) {
         $stmt = $mysqli->prepare('INSERT INTO osobne_udaje(email, meno, priezvisko, adresa) VALUES(?, ?, ?, ?)');
         $stmt->bind_param('ssss', $email, $meno, $priezvisko, $adresa);
@@ -108,6 +109,7 @@ function insert_osobne_udaje($mysqli, $email, $meno, $priezvisko, $adresa): int 
     }
     return -1;
 }
+
 // TODO: osetrit ak email existuje
 function insert_poslanec($mysqli, $poslanec): bool
 {
@@ -138,7 +140,8 @@ function insert_admin($mysqli, $admin): bool
     return false;
 }
 
-function update_osobne_udaje($mysqli, $email, $meno, $priezvisko, $adresa) {
+function update_osobne_udaje($mysqli, $email, $meno, $priezvisko, $adresa)
+{
     // TODO: skontrolovat spravanie pri update emailu na duplicitny
     if (!$mysqli->connect_errno) {
         $old_udaje = select_osobne_udaje($mysqli, $email);

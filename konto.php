@@ -11,12 +11,10 @@ if (isset($_POST['login'])) {
         // spravne udaje
         $_SESSION[SESSION_USER] = select_poslanec($mysqli, $_POST['email']);
         $_SESSION[SESSION_USER_ROLE] = ROLE_POSLANEC;
-    }
-    else if($verify == 2) {
+    } else if ($verify == 2) {
         $_SESSION[SESSION_USER] = select_admin($mysqli, $_POST['email']);
         $_SESSION[SESSION_USER_ROLE] = ROLE_ADMIN;
-    }
-    else {
+    } else {
         // nespravne udaje
         $password_incorrect = true;
     }
@@ -32,11 +30,13 @@ if (!isset($_SESSION[SESSION_USER])) { ?>
                 <form method="post">
                     <div class="mb-3 mt-3">
                         <label for="email" class="form-label">Email:</label>
-                        <input type="email" class="form-control" id="email" placeholder="Zadajte email" name="email" value="test@example.com">
+                        <input type="email" class="form-control" id="email" placeholder="Zadajte email" name="email"
+                               value="test@example.com">
                     </div>
                     <div class="mb-3">
                         <label for="pwd" class="form-label">Heslo:</label>
-                        <input type="password" class="form-control" id="pwd" placeholder="Zadajte heslo" name="pswd" value="heslo123">
+                        <input type="password" class="form-control" id="pwd" placeholder="Zadajte heslo" name="pswd"
+                               value="heslo123">
                     </div>
                     <div class="form-check mb-3">
                         <label class="form-check-label">
@@ -45,6 +45,33 @@ if (!isset($_SESSION[SESSION_USER])) { ?>
                     </div>
                     <button type="submit" name="login" class="btn btn-primary">Prihlásiť</button>
                 </form>
+            </div>
+        </div>
+        <div class="col-md-4"></div>
+        <div class="col-md-4"></div>
+    </div>
+<?php } else { ?>
+    <div class="row">
+        <div class="col-md-6">
+            <div class="container">
+                <h2>Moje parlamentné konto</h2>
+                <div class="row">
+                    <div class="col-md-4">
+                        <?php $user = $_SESSION[SESSION_USER]; ?>
+                        <h6>Meno a priezvisko:</h6>
+                        <div class="bg-secondary bg-opacity-25 container"><?php echo $user['meno'] . ' ' . $user['priezvisko'] ?></div>
+                    </div>
+                    <?php if ($_SESSION[SESSION_USER_ROLE] == ROLE_POSLANEC) { ?>
+                    <div class="col-md-4">
+                            <h6>Titul:</h6>
+                            <div class="bg-secondary bg-opacity-25 container"><?php echo $user['titul'] ?></div>
+                    </div>
+                    <?php } ?>
+                    <div class="col-md-4">
+                        <h6>Adresa:</h6>
+                        <div class="bg-secondary bg-opacity-25 container"><?php echo $user['adresa'] ?></div>
+                    </div>
+                </div>
             </div>
         </div>
         <div class="col-md-4"></div>
