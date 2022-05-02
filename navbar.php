@@ -20,8 +20,14 @@
                 </li>
                 <li class="nav-item">
                     <a class="nav-link <?php if ($page == "konto.php") echo 'active' ?>" href="konto.php" tabindex="-1"
-                       aria-disabled="true"><?php echo isset($_SESSION[SESSION_USER_ID]) ? 'Konto' : 'Prihlásenie' ?></a>
+                       aria-disabled="true"><?php echo isset($_SESSION[SESSION_USER]) ? 'Konto' : 'Prihlásenie' ?></a>
                 </li>
+                <?php
+                if (isset($_SESSION[SESSION_USER])) { ?>
+                    <li class="nav-item">
+                        <a class="nav-link" href="logout.php">Odhlásenie</a>
+                    </li>
+                <?php } ?>
             </ul>
         </div>
     </div>
