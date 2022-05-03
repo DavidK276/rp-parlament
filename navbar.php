@@ -13,7 +13,7 @@
                        aria-current="page" href="index.php">Index</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link <?php if ($page == "poslanci.php") echo 'active' ?>" href="#">Poslanci</a>
+                    <a class="nav-link <?php if ($page == "poslanci.php") echo 'active' ?>" href="poslanci.php">Poslanci</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link <?php if ($page == "schodze.php") echo 'active' ?>" href="#">Schôdze</a>
