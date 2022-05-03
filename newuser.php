@@ -46,7 +46,8 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
                 $poslanec['priezvisko'] = explode(' ', $whole_name)[1];
                 $poslanec['adresa'] = sanitise($_POST['adresa']);
                 $poslanec['heslo'] = $_POST['heslo0'];
-                $poslanec['specializacia'] = implode(',', $_POST['specializacia']);
+                if (!isset($_POST['specializacia'])) $poslanec['specializacia'] = '';
+                else $poslanec['specializacia'] = implode(',', $_POST['specializacia']);
                 $result = insert_poslanec($mysqli, $poslanec);
             } else if ($_POST['rola'] == 'admin') {
                 $admin = array();
@@ -60,79 +61,79 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
             }
         }
     } ?>
-
+<div class="container">
     <div class="row">
         <div class="col-md-4">
-            <div class="container">
-                <h2>Nový používateľ</h2>
-                <form method="post" class="needs-validation" id="form_add_user" novalidate>
-                    <div class="my-3">
-                        <label for="email" class="form-label">Email:</label>
+            <h2>Nový používateľ</h2>
+            <form method="post" class="needs-validation" id="form_add_user" novalidate>
+                <div class="my-3">
+                    <label for="email" class="form-label">Email:</label>
 
-                        <input type="email" class="form-control" id="email" placeholder="Zadajte email" name="email"
-                               value="" required>
-                        <div class="invalid-feedback">Zadajte platný email</div>
+                    <input type="email" class="form-control" id="email" placeholder="Zadajte email" name="email"
+                           value="" required>
+                    <div class="invalid-feedback">Zadajte platný email</div>
+                </div>
+                <div class="mb-3">
+                    <label for="rola" class="form-label">Rola:</label>
+                    <div id="rola">
+                        <input type="radio" name="rola" id="rola_admin" value="admin" required aria-selected="true"
+                               checked>
+                        <label for="rola_admin">Administrátor</label>
+                        <input type="radio" name="rola" id="rola_poslanec" value="poslanec" required>
+                        <label for="rola_poslanec">Poslanec</label>
+                        <div class="invalid-feedback">Vyberte rolu</div>
                     </div>
-                    <div class="mb-3">
-                        <label for="rola" class="form-label">Rola:</label>
-                        <div id="rola">
-                            <input type="radio" name="rola" id="rola_admin" value="admin" required aria-selected="true"
-                                   checked>
-                            <label for="rola_admin">Administrátor</label>
-                            <input type="radio" name="rola" id="rola_poslanec" value="poslanec" required>
-                            <label for="rola_poslanec">Poslanec</label>
-                            <div class="invalid-feedback">Vyberte rolu</div>
-                        </div>
-                    </div>
-                    <div class="mb-3" hidden>
-                        <label for="titul" class="form-label">Titul:</label>
-                        <input type="text" class="form-control" id="titul" placeholder="Zadajte titul" name="titul"
-                               value="">
-                    </div>
-                    <div class="mb-3" hidden>
-                        <label for="hidden_field" class="form-label">Špecializácia:</label>
-                        <input type="hidden" id="hidden_field" value="">
-                        <div class="form-check">
-                            <?php foreach (get_spec_values($mysqli) as $spec) {
-                                $l = strtolower($spec);
-                                $l = explode(' ', $l)[0];
-                                echo "<input class=\"form-check-input\" type=\"checkbox\" value=\"$spec\" id=\"sp_$l\" name=\"specializacia[]\">
+                </div>
+                <div class="mb-3" hidden>
+                    <label for="titul" class="form-label">Titul:</label>
+                    <input type="text" class="form-control" id="titul" placeholder="Zadajte titul" name="titul"
+                           value="">
+                </div>
+                <div class="mb-3" hidden>
+                    <label for="hidden_field" class="form-label">Špecializácia:</label>
+                    <input type="hidden" id="hidden_field" value="">
+                    <div class="form-check">
+                        <?php foreach (get_spec_values($mysqli) as $spec) {
+                            $l = strtolower($spec);
+                            $l = explode(' ', $l)[0];
+                            echo "<input class=\"form-check-input\" type=\"checkbox\" value=\"$spec\" id=\"sp_$l\" name=\"specializacia[]\">
                                     <label class=\"form-check-label\" for=\"sp_$l\">$spec</label><br>";
-                            } ?>
-                        </div>
+                        } ?>
                     </div>
-                    <div class="mb-3">
-                        <label for="meno_priezvisko" class="form-label">Meno a priezvisko:</label>
-                        <input type="text" class="form-control" id="meno_priezvisko"
-                               placeholder="Zadajte meno a priezvisko" name="cele_meno" value="" required>
-                        <div class="invalid-feedback" id="meno_feedback"></div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="adresa" class="form-label">Adresa:</label>
-                        <input type="text" class="form-control" id="adresa" placeholder="Zadajte adresu"
-                               name="adresa" value="" required>
-                        <div class="invalid-feedback" id="adresa_feedback"></div>
-                    </div>
-                    <div class="mb-1">
-                        <label for="pwd" class="form-label">Heslo:</label>
-                        <input type="password" class="form-control" id="pwd" placeholder="Vytvorte heslo" name="heslo0"
-                               value="" required>
-                        <!--                        <div class="invalid-feedback">Zadajte heslo</div>-->
-                    </div>
-                    <div class="mb-3">
-                        <label for="pwd_rep" class="form-label" hidden>Zopakovať heslo:</label>
-                        <input type="password" class="form-control" id="pwd_rep" placeholder="Zopakovať heslo"
-                               name="heslo1" value="" required>
-                        <div class="invalid-feedback" id="pwd_feedback"></div>
-                    </div>
-                    <button type="submit" name="submit" class="btn btn-primary">Pridať používaťeľa</button>
-                    <?php if (isset($errors) && empty($errors)) echo '<p class="d-inline mx-2 text-success">Používateľ pridaný!</p>'; ?>
-                </form>
-            </div>
+                </div>
+                <div class="mb-3">
+                    <label for="meno_priezvisko" class="form-label">Meno a priezvisko:</label>
+                    <input type="text" class="form-control" id="meno_priezvisko"
+                           placeholder="Zadajte meno a priezvisko" name="cele_meno" value="" required>
+                    <div class="invalid-feedback" id="meno_feedback"></div>
+                </div>
+                <div class="mb-3">
+                    <label for="adresa" class="form-label">Adresa:</label>
+                    <input type="text" class="form-control" id="adresa" placeholder="Zadajte adresu"
+                           name="adresa" value="" required>
+                    <div class="invalid-feedback" id="adresa_feedback"></div>
+                </div>
+                <div class="mb-1">
+                    <label for="pwd" class="form-label">Heslo:</label>
+                    <input type="password" class="form-control" id="pwd" placeholder="Vytvorte heslo" name="heslo0"
+                           value="" required>
+                    <!--                        <div class="invalid-feedback">Zadajte heslo</div>-->
+                </div>
+                <div class="mb-3">
+                    <label for="pwd_rep" class="form-label" hidden>Zopakovať heslo:</label>
+                    <input type="password" class="form-control" id="pwd_rep" placeholder="Zopakovať heslo"
+                           name="heslo1" value="" required>
+                    <div class="invalid-feedback" id="pwd_feedback"></div>
+                </div>
+                <button type="submit" name="submit" class="btn btn-primary">Pridať používaťeľa</button>
+                <?php if (isset($errors) && empty($errors)) echo '<p class="d-inline mx-2 text-success">Používateľ pridaný!</p>'; ?>
+            </form>
         </div>
         <div class="col-md-4"></div>
         <div class="col-md-4"></div>
     </div>
+</div>
+
     <script>
         (function () {
             'use strict'
