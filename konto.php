@@ -22,9 +22,9 @@ if (isset($_POST['login'])) {
 include('navbar.php');
 
 if (!isset($_SESSION[SESSION_USER])) { ?>
-    <div class="row">
-        <div class="col-md-4">
-            <div class="container">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4">
                 <h2>Prihlásenie do parlamentu</h2>
                 <?php if (isset($password_incorrect) && $password_incorrect) echo '<p class="text-danger m-0">Nesprávne meno alebo heslo.</p>' ?>
                 <form method="post">
@@ -53,24 +53,22 @@ if (!isset($_SESSION[SESSION_USER])) { ?>
 <?php } else { ?>
     <div class="row">
         <div class="col-md-6">
-            <div class="container">
-                <h2>Moje parlamentné konto</h2>
-                <div class="row">
+            <h2>Moje parlamentné konto</h2>
+            <div class="row">
+                <div class="col-md-4">
+                    <?php $user = $_SESSION[SESSION_USER]; ?>
+                    <h6>Meno a priezvisko:</h6>
+                    <div class="bg-secondary bg-opacity-25 container"><?php echo $user['meno'] . ' ' . $user['priezvisko'] ?></div>
+                </div>
+                <?php if ($_SESSION[SESSION_USER_ROLE] == ROLE_POSLANEC) { ?>
                     <div class="col-md-4">
-                        <?php $user = $_SESSION[SESSION_USER]; ?>
-                        <h6>Meno a priezvisko:</h6>
-                        <div class="bg-secondary bg-opacity-25 container"><?php echo $user['meno'] . ' ' . $user['priezvisko'] ?></div>
+                        <h6>Titul:</h6>
+                        <div class="bg-secondary bg-opacity-25 container"><?php echo $user['titul'] ?></div>
                     </div>
-                    <?php if ($_SESSION[SESSION_USER_ROLE] == ROLE_POSLANEC) { ?>
-                    <div class="col-md-4">
-                            <h6>Titul:</h6>
-                            <div class="bg-secondary bg-opacity-25 container"><?php echo $user['titul'] ?></div>
-                    </div>
-                    <?php } ?>
-                    <div class="col-md-4">
-                        <h6>Adresa:</h6>
-                        <div class="bg-secondary bg-opacity-25 container"><?php echo $user['adresa'] ?></div>
-                    </div>
+                <?php } ?>
+                <div class="col-md-4">
+                    <h6>Adresa:</h6>
+                    <div class="bg-secondary bg-opacity-25 container"><?php echo $user['adresa'] ?></div>
                 </div>
             </div>
         </div>
