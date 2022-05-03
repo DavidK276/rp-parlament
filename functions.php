@@ -1,6 +1,20 @@
 <?php
 date_default_timezone_set('Europe/Bratislava');
 
+function partition(Array $list, $p) {
+    $listlen = count($list);
+    $partlen = floor($listlen / $p);
+    $partrem = $listlen % $p;
+    $partition = array();
+    $mark = 0;
+    for($px = 0; $px < $p; $px ++) {
+        $incr = ($px < $partrem) ? $partlen + 1 : $partlen;
+        $partition[$px] = array_slice($list, $mark, $incr);
+        $mark += $incr;
+    }
+    return $partition;
+}
+
 function head($title = 'Úvod'): void
 { ?>
     <!DOCTYPE html>
@@ -245,4 +259,13 @@ function get_spec_values($mysqli): array
     $type = $mysqli->query("SHOW COLUMNS FROM poslanec WHERE Field = 'specializacia'")->fetch_assoc()['Type'];
     preg_match("/^set\('(.*)'\)$/", $type, $matches);
     return explode("','", $matches[1]);
+}
+
+function get_all_poslanci($mysqli): array
+{
+    if (!$mysqli->connect_errno) {
+        $sql = "SELECT poslanec.id, titul, osobne_udaje.meno, priezvisko FROM osobne_udaje, poslanec WHERE poslanec.id_udaje=osobne_udaje.id";
+        return $mysqli->query($sql)->fetch_all(MYSQLI_ASSOC);
+    }
+    return [];
 }
