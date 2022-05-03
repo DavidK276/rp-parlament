@@ -8,7 +8,7 @@ head('Pridať používateľa');
 include('navbar.php'); ?>
 
 <?php
-if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] = ROLE_ADMIN) {
+if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
     if (isset($_POST['submit'])) {
         $errors = array();
 //    $email = sanitise($_POST['email']);
