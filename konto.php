@@ -7,11 +7,11 @@ head(isset($_SESSION[SESSION_USER]) ? 'Konto' : 'Prihlásenie');
 // overenie udajov treba robit skor ako sa spusti navbar, aby sa prihlasenie hned prejavilo
 if (isset($_POST['login'])) {
     $verify = verify_user($mysqli, $_POST['email'], $_POST['pswd']);
-    if ($verify == 1) {
+    if ($verify == ROLE_POSLANEC) {
         // spravne udaje
         $_SESSION[SESSION_USER] = select_poslanec($mysqli, $_POST['email']);
         $_SESSION[SESSION_USER_ROLE] = ROLE_POSLANEC;
-    } else if ($verify == 2) {
+    } else if ($verify == ROLE_ADMIN) {
         $_SESSION[SESSION_USER] = select_admin($mysqli, $_POST['email']);
         $_SESSION[SESSION_USER_ROLE] = ROLE_ADMIN;
     } else {
@@ -51,8 +51,9 @@ if (!isset($_SESSION[SESSION_USER])) { ?>
         <div class="col-md-4"></div>
     </div>
 <?php } else { ?>
+<div class="container">
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-12">
             <h2>Moje parlamentné konto</h2>
             <div class="row">
                 <div class="col-md-4">
@@ -72,9 +73,8 @@ if (!isset($_SESSION[SESSION_USER])) { ?>
                 </div>
             </div>
         </div>
-        <div class="col-md-4"></div>
-        <div class="col-md-4"></div>
     </div>
+</div>
 <?php }
 
 include('footer.php');
