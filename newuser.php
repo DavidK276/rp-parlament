@@ -35,10 +35,10 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
         $error = false;
         if (empty($_POST['email'])) $error = true;
         else if (empty(!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL))) $error = true;
-        else if (empty($_POST['rola'])) $error = true;
+        else if (empty($_POST['rola']) && ($_POST['rola'] != ROLE_ADMIN || $_POST['rola'] != ROLE_POSLANEC)) $error = true;
         else if (strlen($_POST['titul'] > 20)) $error = true;
-        else if (empty($_POST['cele_meno']) || strlen($_POST['cele_meno']) > 60) $error = true;
-        else if (empty($_POST['adresa']) || strlen($_POST['adresa']) > 60) $error = true;
+        else if (empty($_POST['cele_meno']) || strlen($_POST['cele_meno']) > 60 || !verify_name($_POST['cele_meno'])) $error = true;
+        else if (empty($_POST['adresa']) || strlen($_POST['adresa']) > 100 || strlen($_POST['adresa']) < 6) $error = true;
         else if (empty($_POST['heslo0']) || $_POST['heslo0'] != $_POST['heslo1']) $error = true;
         if ($error) {
             http_response_code(400);
@@ -76,30 +76,42 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
             <h2>Nový používateľ</h2>
             <form method="post" class="needs-validation" id="form_add_user" novalidate>
                 <div class="my-3">
-                    <label for="email" class="form-label">Email:</label>
+                    <label for="email" class="form-label"><b class="text-danger">*</b>&nbsp;Email:
+                        <i class="material-icons" title="Email musí mať platný formát napr. jozko@example.com">help</i>
+                    </label>
 
                     <input type="email" class="form-control" id="email" placeholder="Zadajte email" name="email"
                            value="" required>
                     <div class="invalid-feedback">Zadajte platný email</div>
                 </div>
                 <div class="mb-3">
-                    <label for="rola" class="form-label">Rola:</label>
+                    <label for="rola" class="form-label"><b class="text-danger">*</b>&nbsp;Rola:
+                        <i class="material-icons" title="Určuje rolu nového používateľa">help</i>
+                    </label>
                     <div id="rola">
-                        <input type="radio" name="rola" id="rola_admin" value="admin" required aria-selected="true"
-                               checked>
-                        <label for="rola_admin">Administrátor</label>
-                        <input type="radio" name="rola" id="rola_poslanec" value="poslanec" required>
-                        <label for="rola_poslanec">Poslanec</label>
+                        <nobr>
+                            <input type="radio" name="rola" id="rola_admin" value="<?php echo ROLE_ADMIN?>" required aria-selected="true"
+                                   checked>
+                            <label for="rola_admin">Administrátor</label>
+                        </nobr>
+                        <nobr>
+                            <input type="radio" name="rola" id="rola_poslanec" value="<?php echo ROLE_POSLANEC ?>" required>
+                            <label for="rola_poslanec">Poslanec</label>
+                        </nobr>
                         <div class="invalid-feedback">Vyberte rolu</div>
                     </div>
                 </div>
                 <div class="mb-3" hidden>
-                    <label for="titul" class="form-label">Titul:</label>
+                    <label for="titul" class="form-label">Titul:
+                        <i class="material-icons" title="Tituly používateľa, napr. Mgr.">help</i>
+                    </label>
                     <input type="text" class="form-control" id="titul" placeholder="Zadajte titul" name="titul"
                            value="">
                 </div>
                 <div class="mb-3" hidden>
-                    <label for="hidden_field" class="form-label">Špecializácia:</label>
+                    <label for="hidden_field" class="form-label">Špecializácia:
+                        <i class="material-icons" title="Špecializácie používateľa">help</i>
+                    </label>
                     <input type="hidden" id="hidden_field" value="">
                     <div class="form-check">
                         <?php foreach (get_spec_values($mysqli) as $spec) {
@@ -111,19 +123,27 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
                     </div>
                 </div>
                 <div class="mb-3">
-                    <label for="meno_priezvisko" class="form-label">Meno a priezvisko:</label>
+                    <label for="meno_priezvisko" class="form-label"><b class="text-danger">*</b>&nbsp;Meno a priezvisko:
+                        <i class="material-icons" title="Musí obsahovať presne dve slová po aspoň 3 znaky a nesmie byť dlhšie ako 60 znakov">help</i>
+                    </label>
                     <input type="text" class="form-control" id="meno_priezvisko"
                            placeholder="Zadajte meno a priezvisko" name="cele_meno" value="" required>
                     <div class="invalid-feedback" id="meno_feedback"></div>
                 </div>
                 <div class="mb-3">
-                    <label for="adresa" class="form-label">Adresa:</label>
-                    <input type="text" class="form-control" id="adresa" placeholder="Zadajte adresu"
-                           name="adresa" value="" required>
+                    <label for="adresa" class="form-label"><b class="text-danger">*</b>&nbsp;Adresa:
+                        <i class="material-icons" title="Musí mať medzi 6 a 100 znakov">help</i>
+                    </label>
+<!--                    <input type="text" class="form-control" id="adresa" placeholder="Zadajte adresu"-->
+<!--                           name="adresa" value="" required>-->
+                    <textarea class="form-control" id="adresa" placeholder="Zadajte adresu"
+                              name="adresa" rows="5" required></textarea>
                     <div class="invalid-feedback" id="adresa_feedback"></div>
                 </div>
                 <div class="mb-1">
-                    <label for="pwd" class="form-label">Heslo:</label>
+                    <label for="pwd" class="form-label"><b class="text-danger">*</b>&nbsp;Heslo:
+                        <i class="material-icons" title="Heslá sa musia zhodovať">help</i>
+                    </label>
                     <input type="password" class="form-control" id="pwd" placeholder="Vytvorte heslo" name="heslo0"
                            value="" required>
                     <!--                        <div class="invalid-feedback">Zadajte heslo</div>-->
@@ -174,6 +194,9 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
                         if (address_input.value !== '' && address_input.value.length < 6) {
                             address_input.setCustomValidity('Adresa musí mať aspoň 6 znakov');
                             document.getElementById('adresa_feedback').innerHTML = 'Adresa musí mať aspoň 6 znakov';
+                        } else if (address_input.value !== '' && address_input.value.length > 100) {
+                            address_input.setCustomValidity('Adresa musí mať najviac 100 znakov');
+                            document.getElementById('adresa_feedback').innerHTML = 'Adresa musí mať najviac 100 znakov';
                         } else {
                             address_input.setCustomValidity('');
                             document.getElementById('adresa_feedback').innerHTML = 'Zadajte adresu';
