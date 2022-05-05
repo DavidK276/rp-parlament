@@ -31,6 +31,11 @@ function head($title = 'Úvod'): void
 </header>
 <?php }
 
+function display_error($error): void
+{
+    echo "<div class=\"container\"><div class=\"row\"><div class=\"col-md-12\"><h3>$error</h3></div></div></div>";
+}
+
 function verify_user($mysqli, $email, $pswd): int
 {
     if (!$mysqli->connect_errno) {
