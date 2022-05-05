@@ -1,5 +1,5 @@
 <footer class="container-fluid bg-primary text-white mt-4">
-<p>Vytvoril David Krchňavý, 2022</p>
+<div>Vytvoril David Krchňavý (ISIC: 461), 2022</div>
 </footer>
 
 </body>
