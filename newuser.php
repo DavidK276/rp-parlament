@@ -1,6 +1,5 @@
 <?php
 session_start();
-// TODO: zakazat pristup neopravnenym ludom
 include('constants.php');
 include('functions.php');
 include('database.php');
@@ -10,7 +9,6 @@ include('navbar.php'); ?>
 <?php
 if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
     if (isset($_POST['submit'])) {
-        $errors = array();
 //    $email = sanitise($_POST['email']);
 //    $role = $_POST['rola'];
 //    $title = sanitise($_POST['titul']);
@@ -34,12 +32,23 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
 //    else if (strlen($address) > 50) $errors['address'] = "Adresa musí mať najviac 50 znakov";
 //    if (empty($password)) $errors['password'] = "Zadajte heslo";
 //    else if ($password != $password_repeat) $errors['password'] = "Heslá sa nezhodujú";
-
-        if (empty($errors)) {
+        $error = false;
+        if (empty($_POST['email'])) $error = true;
+        else if (empty(!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL))) $error = true;
+        else if (empty($_POST['rola'])) $error = true;
+        else if (strlen($_POST['titul'] > 20)) $error = true;
+        else if (empty($_POST['cele_meno']) || strlen($_POST['cele_meno']) > 60) $error = true;
+        else if (empty($_POST['adresa']) || strlen($_POST['adresa']) > 60) $error = true;
+        else if (empty($_POST['heslo0']) || $_POST['heslo0'] != $_POST['heslo1']) $error = true;
+        if ($error) {
+            http_response_code(400);
+            display_error('Chybná požiadavka.');
+        }
+        else {
             // ak je vstup platny, vlozit do databazy
             if ($_POST['rola'] == 'poslanec') {
                 $poslanec = array();
-                $poslanec['email'] = sanitise($_POST['email']);
+                $poslanec['email'] = sanitise(filter_var($_POST['email'], FILTER_SANITIZE_EMAIL));
                 $poslanec['titul'] = sanitise($_POST['titul']);
                 $whole_name = sanitise($_POST['cele_meno']);
                 $poslanec['meno'] = explode(' ', $whole_name)[0];
@@ -206,7 +215,7 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
         }
     </script>
 <?php } else {
-    echo '<div class="row"><div class="col-md-4"><div class="container"><h3>K tejto stránke nemáte prístup.</h3></div></div></div>';
+    display_error('K tejto stránke nemáte prístup.');
 }
 ?>
 
