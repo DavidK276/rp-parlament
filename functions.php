@@ -103,17 +103,15 @@ function user_exists(mysqli $mysqli, string $email): bool
 {
     if (!$mysqli->connect_errno) {
         $email = filter_var($email, FILTER_SANITIZE_EMAIL);
-        $stmt = $mysqli->prepare('SELECT email FROM osobne_udaje WHERE email=?');
+        $stmt = $mysqli->prepare('SELECT id FROM osobne_udaje WHERE email=?');
         $stmt->bind_param('s', $email);
         $stmt->execute();
         $result = $stmt->get_result();
-        $stmt->close();
         if ($result->num_rows > 0) {
             $result->free();
             return true;
         }
         $result->free();
-        return false;
     }
     return false;
 }
@@ -240,9 +238,9 @@ function insert_admin(mysqli $mysqli, array $admin): bool
     return ERROR_UNKNOWN;
 }
 
-function update_osobne_udaje(mysqli $mysqli, string $email, string $meno, string $priezvisko, string $adresa, $ou_id=0): int
+function update_osobne_udaje(mysqli $mysqli, string $email, string $meno, string $priezvisko, string $adresa): int
 {
-    // TODO: skontrolovat spravanie pri update emailu na duplicitny
+    // TODO: fixnut duplicitny email
     if (!$mysqli->connect_errno) {
         $old_udaje = select_osobne_udaje($mysqli, $email);
         if (user_exists($mysqli, $email) && $old_udaje['email'] != $email) return ERROR_USER_EXISTS;

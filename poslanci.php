@@ -59,7 +59,7 @@ if (isset($_GET['poslanec_id'])) {
                             <?php if ($_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
                                 <h6>Bezpečnostná previerka:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4"><?= ($bezp_prev['uroven'] ?? '-');
-                                    if ($bezp_prev['uroven']) echo $bezp_prev['platnost'] ? ' (platná)' : ' (neplatná)'; ?></div>
+                                    if (isset($bezp_prev['uroven'])) echo $bezp_prev['platnost'] ? ' (platná)' : ' (neplatná)'; ?></div>
                             <?php } ?>
                         </div>
                         <div class="col-md-4">
