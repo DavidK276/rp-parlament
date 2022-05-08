@@ -34,9 +34,9 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
 //    else if ($password != $password_repeat) $errors['password'] = "Heslá sa nezhodujú";
         $error = false;
         if (empty($_POST['email'])) $error = true;
-        else if (empty(!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL))) $error = true;
+        else if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) $error = true;
         else if (empty($_POST['rola']) && ($_POST['rola'] != ROLE_ADMIN || $_POST['rola'] != ROLE_POSLANEC)) $error = true;
-        else if (strlen($_POST['titul'] > 20)) $error = true;
+        else if (strlen($_POST['titul']) > 20) $error = true;
         else if (empty($_POST['cele_meno']) || strlen($_POST['cele_meno']) > 60 || !verify_name($_POST['cele_meno'])) $error = true;
         else if (empty($_POST['adresa']) || strlen($_POST['adresa']) > 100 || strlen($_POST['adresa']) < 6) $error = true;
         else if (empty($_POST['heslo0']) || $_POST['heslo0'] != $_POST['heslo1']) $error = true;
@@ -46,7 +46,7 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
         }
         else {
             // ak je vstup platny, vlozit do databazy
-            if ($_POST['rola'] == 'poslanec') {
+            if ($_POST['rola'] == ROLE_POSLANEC) {
                 $poslanec = array();
                 $poslanec['email'] = sanitise(filter_var($_POST['email'], FILTER_SANITIZE_EMAIL));
                 $poslanec['titul'] = sanitise($_POST['titul']);
@@ -58,7 +58,7 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
                 if (!isset($_POST['specializacia'])) $poslanec['specializacia'] = '';
                 else $poslanec['specializacia'] = implode(',', $_POST['specializacia']);
                 $result = insert_poslanec($mysqli, $poslanec);
-            } else if ($_POST['rola'] == 'admin') {
+            } else if ($_POST['rola'] == ROLE_ADMIN) {
                 $admin = array();
                 $admin['email'] = sanitise($_POST['email']);
                 $whole_name = sanitise($_POST['cele_meno']);
@@ -90,12 +90,12 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
                     </label>
                     <div id="rola">
                         <nobr>
-                            <input type="radio" name="rola" id="rola_admin" value="<?php echo ROLE_ADMIN?>" required aria-selected="true"
+                            <input type="radio" name="rola" id="rola_admin" value="<?= ROLE_ADMIN ?>" required aria-selected="true"
                                    checked>
                             <label for="rola_admin">Administrátor</label>
                         </nobr>
                         <nobr>
-                            <input type="radio" name="rola" id="rola_poslanec" value="<?php echo ROLE_POSLANEC ?>" required>
+                            <input type="radio" name="rola" id="rola_poslanec" value="<?= ROLE_POSLANEC ?>" required>
                             <label for="rola_poslanec">Poslanec</label>
                         </nobr>
                         <div class="invalid-feedback">Vyberte rolu</div>
@@ -155,7 +155,11 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
                     <div class="invalid-feedback" id="pwd_feedback"></div>
                 </div>
                 <button type="submit" name="submit" class="btn btn-primary">Pridať používaťeľa</button>
-                <?php if (isset($errors) && empty($errors)) echo '<p class="d-inline mx-2 text-success">Používateľ pridaný!</p>'; ?>
+                <?php if (isset($result)) {
+                    if ($result == SUCCESS) echo '<p class="d-inline mx-2 text-success">Používateľ pridaný</p>';
+                    else if ($result == ERROR_USER_EXISTS) echo '<p class="d-inline mx-2 text-danger">Zadaný email sa už používa!</p>';
+                    else if ($result == ERROR_UNKNOWN) echo '<p class="d-inline mx-2 text-danger">Neznáma chyba</p>';
+                }?>
             </form>
         </div>
         <div class="col-md-4"></div>
@@ -211,14 +215,12 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
                             name_input.setCustomValidity('');
                             document.getElementById('meno_feedback').innerHTML = 'Zadajte meno a priezvisko';
                         }
-                        form.classList.add('was-validated')
+                        form.classList.add('was-validated');
+                        form.addEventListener('input', function () {
+                            form.classList.remove('was-validated');
+                        });
                     }, false)
                 });
-
-
-            document.getElementById('form_add_user').addEventListener('input', function () {
-                document.getElementById('form_add_user').classList.remove('was-validated');
-            });
 
             document.getElementById('rola_admin').addEventListener('click', function () {
                 document.getElementById('titul').parentElement.setAttribute('hidden', '');
@@ -229,7 +231,7 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
                 document.getElementById('titul').parentElement.removeAttribute('hidden');
                 document.getElementById('hidden_field').parentElement.removeAttribute('hidden');
             });
-        })()
+        })();
 
         function verify_name(name) {
             let name_split = name.split(' ');
@@ -240,6 +242,5 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
 <?php } else {
     display_error('K tejto stránke nemáte prístup.');
 }
-?>
 
-<?php include('footer.php'); ?>
+include('footer.php');
