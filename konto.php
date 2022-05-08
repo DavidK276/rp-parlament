@@ -59,17 +59,17 @@ if (!isset($_SESSION[SESSION_USER])) { ?>
                 <div class="col-md-4">
                     <?php $user = $_SESSION[SESSION_USER]; ?>
                     <h6>Meno a priezvisko:</h6>
-                    <div class="bg-secondary bg-opacity-25 container"><?php echo $user['meno'] . ' ' . $user['priezvisko'] ?></div>
+                    <div class="bg-secondary bg-opacity-25 container"><?= $user['meno'] . ' ' . $user['priezvisko'] ?></div>
                 </div>
                 <?php if ($_SESSION[SESSION_USER_ROLE] == ROLE_POSLANEC) { ?>
                     <div class="col-md-4">
                         <h6>Titul:</h6>
-                        <div class="bg-secondary bg-opacity-25 container"><?php echo $user['titul'] ?></div>
+                        <div class="bg-secondary bg-opacity-25 container"><?= $user['titul'] ?></div>
                     </div>
                 <?php } ?>
                 <div class="col-md-4">
                     <h6>Adresa:</h6>
-                    <div class="bg-secondary bg-opacity-25 container"><?php echo $user['adresa'] ?></div>
+                    <div class="bg-secondary bg-opacity-25 container"><?= $user['adresa'] ?></div>
                 </div>
             </div>
         </div>
