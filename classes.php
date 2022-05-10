@@ -2,6 +2,7 @@
 
 class UserExistsException extends Exception {}
 class UserNotFoundException extends Exception {}
+class AttributeException extends Exception {}
 
 class BezpecnostnaPrevierka
 {
@@ -18,11 +19,11 @@ class BezpecnostnaPrevierka
         $this->vsetky_urovne = explode("','", $matches[1]);
     }
 
-    private function check_database() {
+    private function check_database(): bool {
         return !$this->mysqli->connect_errno;
     }
 
-    public function select() {
+    public function select(): void {
         if ($this->check_database()){
             $stmt = $this->mysqli->prepare("SELECT uroven, kto_udelil, datum, platnost FROM bezp_previerka WHERE id=?");
             $stmt->bind_param('i', $this->id);
@@ -45,7 +46,6 @@ class BezpecnostnaPrevierka
 class OsobneUdaje
 {
     // todo: funckia na filtrovanie udajov
-    // todo: aby fungoval titul
     public ?int $id_previerka = null;
     public string $email = '';
     public string $titul = '';
@@ -57,12 +57,33 @@ class OsobneUdaje
         if ($id > 0) $this->select();
     }
 
-    private function check_database() {
+    private function check_database(): bool {
         return !$this->mysqli->connect_errno;
     }
 
+    private function check_attributes(): void {
+        if (!filter_var($this->email, FILTER_VALIDATE_EMAIL)) throw new AttributeException("Email must be valid");
+        if (strlen($this->email) > 50) throw new AttributeException("Email was too long.");
+        if (strlen($this->meno) < 3 || strlen($this->priezvisko) < 3) throw new AttributeException("Names must be valid");
+        if (strlen($this->meno . ' '. $this->priezvisko) > 100) throw new AttributeException("Name was too long");
+        if (strlen($this->adresa) < 6 || strlen($this->adresa) > 100) throw new AttributeException("Address must be valid");
+    }
+
+    private function sanitize(string $str): string {
+        return trim(strip_tags($str));
+    }
+
+    private function sanitize_attributes(): void {
+        $this->email = filter_var($this->email, FILTER_SANITIZE_EMAIL);
+        $this->titul = $this->sanitize($this->titul);
+        $this->meno = $this->sanitize($this->meno);
+        $this->priezvisko = $this->sanitize($this->priezvisko);
+        $this->adresa = $this->sanitize($this->adresa);
+    }
+
     public function insert(): void {
-        // todo: pridat kontrolu vyplnenych udajov
+        $this->sanitize_attributes();
+        $this->check_attributes();
         if ($this->check_database()) {
             $stmt = $this->mysqli->prepare('INSERT INTO osobne_udaje(email, meno, priezvisko, adresa, titul) VALUES(?, ?, ?, ?, ?)');
             $stmt->bind_param('sssss', $this->email, $this->meno, $this->priezvisko, $this->adresa, $this->titul);
@@ -73,6 +94,7 @@ class OsobneUdaje
     }
 
     public function select(): void {
+        if ($this->id == null) throw new AttributeException("id must be initialized");
         if ($this->check_database()) {
             $stmt = $this->mysqli->prepare('SELECT * FROM osobne_udaje WHERE osobne_udaje.id=?');
             $stmt->bind_param('i', $this->id);
@@ -130,6 +152,9 @@ class OsobneUdaje
     }
 
     public function update(): void {
+        if ($this->id == null) throw new AttributeException("id must be initialized");
+        $this->sanitize_attributes();
+        $this->check_attributes();
         if ($this->check_database()) {
             $old_udaje = new OsobneUdaje($this->mysqli, $this->id);
             if ($this->email_exists() && $old_udaje->email != $this->email) throw new UserExistsException("The specified email already exists!");
@@ -142,6 +167,7 @@ class OsobneUdaje
     }
 
     public function delete(): void {
+        if ($this->id == null) throw new AttributeException("id must be initialized");
         if ($this->check_database()){
             $stmt = $this->mysqli->prepare("DELETE FROM osobne_udaje WHERE id=?");
             $stmt->bind_param('i', $this->id);
@@ -169,10 +195,15 @@ class Admin
         return !$this->mysqli->connect_errno;
     }
 
+    private function check_attributes(): void {
+        if ($this->udaje == null) throw new AttributeException("udaje must be initialized");
+    }
+
     /**
      * @throws UserNotFoundException
      */
     public function select(): void {
+        if ($this->id == null) throw new AttributeException("id must be initialized");
         if ($this->check_database()) {
             $stmt = $this->mysqli->prepare("SELECT id_udaje FROM admin WHERE admin.id=?");
             $stmt->bind_param('i', $this->id);
@@ -191,6 +222,7 @@ class Admin
     }
 
     public function insert(string $heslo): void {
+        $this->check_attributes();
         if ($this->check_database()) {
             $this->udaje->insert();
             $udaje_id = $this->udaje->id;
@@ -200,10 +232,11 @@ class Admin
             $stmt->execute();
             if (!$stmt->errno) $this->id = $stmt->insert_id;
         }
-        throw new Exception("Unknown error");
+        else throw new Exception("Unknown error");
     }
 
     public function update_heslo(string $heslo): void {
+        if ($this->id == null) throw new AttributeException("id must be initialized");
         $stmt = $this->mysqli->prepare("UPDATE admin SET heslo=? WHERE id=?");
         $password_hash = password_hash($heslo, PASSWORD_DEFAULT);
         $stmt->bind_param('si', $password_hash, $this->id);
@@ -237,6 +270,7 @@ class Admin
     }
 
     public function delete(): int {
+        if ($this->id == null) throw new AttributeException("id must be initialized");
         if ($this->check_database()) {
             $stmt = $this->mysqli->prepare("DELETE FROM admin WHERE admin.id=?");
             $stmt->bind_param('i', $this->id);
@@ -256,7 +290,6 @@ class Poslanec
     public array $specializacia = array();
     private array $vsetky_specializacie;
     public ?OsobneUdaje $udaje = null;
-    private string $heslo = '';
 
     /**
      * @throws UserNotFoundException
@@ -268,14 +301,22 @@ class Poslanec
         $this->vsetky_specializacie =  explode("','", $matches[1]);
     }
 
-    private function check_database() {
+    private function check_database(): bool {
         return !$this->mysqli->connect_errno;
+    }
+
+    private function check_attributes(): void {
+        if ($this->udaje == null) throw new AttributeException("udaje must be initialized");
+        foreach ($this->specializacia as $sp) {
+            if (!in_array($sp, $this->vsetky_specializacie)) throw new AttributeException("Invalid specializacia");
+        }
     }
 
     /**
      * @throws UserNotFoundException
      */
     public function select(): void {
+        if ($this->id == null) throw new AttributeException("id must be initialized");
         if ($this->check_database()) {
             $stmt = $this->mysqli->prepare("SELECT id_udaje, id_klub, specializacia FROM poslanec WHERE poslanec.id=?");
             $stmt->bind_param('i', $this->id);
@@ -296,13 +337,14 @@ class Poslanec
     }
 
     public function insert(string $heslo): void {
+        $this->check_attributes();
         if ($this->check_database()) {
             $this->udaje->insert();
             $udaje_id = $this->udaje->id;
             $stmt = $this->mysqli->prepare("INSERT INTO poslanec(id_udaje, id_klub, specializacia, heslo) VALUES(?, ?, ?, ?)");
             $password_hash = password_hash($heslo, PASSWORD_DEFAULT);
             $spec_str = implode(',', $this->specializacia);
-            $stmt->bind_param('is', $udaje_id, $this->id_klub, $spec_str, $password_hash);
+            $stmt->bind_param('iiss', $udaje_id, $this->id_klub, $spec_str, $password_hash);
             $stmt->execute();
             if (!$stmt->errno) $this->id = $stmt->insert_id;
         }
@@ -310,6 +352,8 @@ class Poslanec
     }
 
     public function update(): void {
+        if ($this->id == null) throw new AttributeException("id must be initialized");
+        $this->check_attributes();
         if ($this->check_database()) {
             $this->udaje->update();
             $old_poslanec = new Poslanec($this->mysqli, $this->id);
@@ -366,6 +410,7 @@ class Poslanec
     }
 
     public function delete(): void {
+        if ($this->id == null) throw new AttributeException("id must be initialized");
         if ($this->check_database()) {
             $stmt = $this->mysqli->prepare("DELETE FROM poslanec WHERE poslanec.id=?");
             $stmt->bind_param('i', $this->id);

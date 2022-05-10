@@ -367,7 +367,7 @@ function delete_poslanec(mysqli $mysqli, string $email): int
  */
 function sanitise(string $input): string
 {
-    return addslashes(trim(strip_tags($input)));
+    return trim(strip_tags($input));
 }
 
 /* kontroluje meno (meno a priezvisko)
@@ -411,3 +411,15 @@ function get_all_poslanci(mysqli $mysqli): array
     }
     return [];
 }
+
+function exception_handler(Throwable $exception): void {
+    if (DEBUG) {
+        echo "Uncaught exception: " , $exception->getMessage(), "\n";
+        exit();
+    }
+    else {
+        display_error('Nastala neznáma chyba.');
+    }
+}
+
+set_exception_handler('exception_handler');

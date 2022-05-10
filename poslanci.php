@@ -9,31 +9,49 @@ include('database.php');
 $poslanci = get_all_poslanci($mysqli);
 $poslanci = partition($poslanci, 3);
 
-// todo: prerobit update poslanca
 if (isset($_POST['submit']) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
-    $error = false;
-    if (empty($_POST['poslanec_id'])) $error = true;
-    else if (empty($_POST['email'])) $error = true;
-    else if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) $error = true;
-    else if (strlen($_POST['titul']) > 20) $error = true;
-    else if (empty($_POST['cele_meno']) || strlen($_POST['cele_meno']) > 60 || !verify_name($_POST['cele_meno'])) $error = true;
-    else if (empty($_POST['adresa']) || strlen($_POST['adresa']) > 100 || strlen($_POST['adresa']) < 6) $error = true;
-    if ($error) {
+//    $error = false;
+//    if (empty($_POST['poslanec_id'])) $error = true;
+//    else if (empty($_POST['email'])) $error = true;
+//    else if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) $error = true;
+//    else if (strlen($_POST['titul']) > 20) $error = true;
+//    else if (empty($_POST['cele_meno']) || strlen($_POST['cele_meno']) > 60 || !verify_name($_POST['cele_meno'])) $error = true;
+//    else if (empty($_POST['adresa']) || strlen($_POST['adresa']) > 100 || strlen($_POST['adresa']) < 6) $error = true;
+//    if ($error) {
+//        http_response_code(400);
+//        display_error('Chybná požiadavka.');
+//    } else {
+//        // ak je vstup platny, vlozit do databazy
+//        $poslanec = array();
+//        $poslanec['id'] = sanitise($_POST['poslanec_id']);
+//        $poslanec['email'] = sanitise(filter_var($_POST['email'], FILTER_SANITIZE_EMAIL));
+//        $poslanec['titul'] = sanitise($_POST['titul']);
+//        $whole_name = sanitise($_POST['cele_meno']);
+//        $poslanec['meno'] = explode(' ', $whole_name)[0];
+//        $poslanec['priezvisko'] = explode(' ', $whole_name)[1];
+//        $poslanec['adresa'] = sanitise($_POST['adresa']);
+//        if (!isset($_POST['specializacia'])) $poslanec['specializacia'] = '';
+//        else $poslanec['specializacia'] = implode(',', $_POST['specializacia']);
+//        $result = update_poslanec($mysqli, $poslanec);
+//    }
+    $poslanec = new Poslanec($mysqli, $_POST['poslanec_id']);
+    $poslanec->udaje->email = $_POST['email'];
+    $name = explode(' ', $_POST['cele_meno']);
+    $poslanec->udaje->meno = $name[0];
+    $poslanec->udaje->priezvisko = $name[1];
+    $poslanec->udaje->titul = $_POST['titul'];
+    $poslanec->udaje->adresa = $_POST['adresa'];
+    $poslanec->specializacia = $_POST['specializacia'];
+    try {
+        $poslanec->update();
+        $result = SUCCESS;
+    }
+    catch (AttributeException | UserNotFoundException) {
         http_response_code(400);
-        display_error('Chybná požiadavka.');
-    } else {
-        // ak je vstup platny, vlozit do databazy
-        $poslanec = array();
-        $poslanec['id'] = sanitise($_POST['poslanec_id']);
-        $poslanec['email'] = sanitise(filter_var($_POST['email'], FILTER_SANITIZE_EMAIL));
-        $poslanec['titul'] = sanitise($_POST['titul']);
-        $whole_name = sanitise($_POST['cele_meno']);
-        $poslanec['meno'] = explode(' ', $whole_name)[0];
-        $poslanec['priezvisko'] = explode(' ', $whole_name)[1];
-        $poslanec['adresa'] = sanitise($_POST['adresa']);
-        if (!isset($_POST['specializacia'])) $poslanec['specializacia'] = '';
-        else $poslanec['specializacia'] = implode(',', $_POST['specializacia']);
-        $result = update_poslanec($mysqli, $poslanec);
+        display_error('Chybná požiadavka');
+    }
+    catch (UserExistsException) {
+        $result = ERROR_USER_EXISTS;
     }
 }
 
@@ -222,22 +240,6 @@ include('footer.php'); ?>
         Array.prototype.slice.call(forms)
             .forEach(function (form) {
                 form.addEventListener('submit', function (event) {
-                    if (!form.checkValidity()) {
-                        event.preventDefault()
-                        event.stopPropagation()
-                    }
-                    // let pwd_rep_input = document.getElementById('pwd_rep');
-                    // let pwd_input = document.getElementById('pwd');
-                    // if (pwd_input.value !== pwd_rep_input.value && pwd_input.value !== '' && pwd_rep_input.value !== '') {
-                    //     pwd_rep_input.setCustomValidity('Heslá sa musia zhodovať');
-                    //     pwd_input.setCustomValidity('Heslá sa musia zhodovať');
-                    //     document.getElementById('pwd_feedback').innerHTML = 'Heslá sa musia zhodovať';
-                    // } else {
-                    //     pwd_rep_input.setCustomValidity('');
-                    //     pwd_input.setCustomValidity('');
-                    //     document.getElementById('pwd_feedback').innerHTML = 'Zadajte heslo';
-                    // }
-
                     let address_input = document.getElementById('adresa');
                     if (address_input.value !== '' && address_input.value.length < 6) {
                         address_input.setCustomValidity('Adresa musí mať aspoň 6 znakov');
@@ -259,7 +261,11 @@ include('footer.php'); ?>
                         name_input.setCustomValidity('');
                         document.getElementById('meno_feedback').innerHTML = 'Zadajte meno a priezvisko';
                     }
-                    form.classList.add('was-validated')
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
                 }, false);
                 form.addEventListener('input', function () {
                     form.classList.remove('was-validated');
