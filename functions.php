@@ -55,43 +55,43 @@ function display_error(string $error_text): void
     echo "<div class=\"container\"><div class=\"row\"><div class=\"col-md-12\"><h3>$error_text</h3></div></div></div>";
 }
 
-/**
- * verifies the user login with the database
- * @param mysqli $mysqli
- * @param string $email
- * @param string $pswd
- * @return int -1 on error, role of the user on success
- */
-function verify_user(mysqli $mysqli, string $email, string $pswd): int
-{
-    if (!$mysqli->connect_errno) {
-        $email = filter_var($email, FILTER_SANITIZE_EMAIL);
-        $stmt = $mysqli->prepare('SELECT heslo FROM osobne_udaje, poslanec WHERE poslanec.id_udaje=osobne_udaje.id AND osobne_udaje.email=?');
-        $stmt->bind_param('s', $email);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $stmt->close();
-        if ($result->num_rows > 0) {
-            $row = $result->fetch_assoc();
-            $result->free();
-            if (password_verify($pswd, $row['heslo'])) return ROLE_POSLANEC;
-            else return -1; // nespravne heslo
-        } else {
-            $stmt = $mysqli->prepare('SELECT heslo FROM osobne_udaje, admin WHERE admin.id_udaje=osobne_udaje.id AND osobne_udaje.email=?');
-            $stmt->bind_param('s', $email);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $stmt->close();
-            if ($result->num_rows > 0) {
-                $row = $result->fetch_assoc();
-                $result->free();
-                if (password_verify($pswd, $row['heslo'])) return ROLE_ADMIN;
-                else return -1; // nespravne heslo
-            }
-        }
-    }
-    return -1;
-}
+///**
+// * verifies the user login with the database
+// * @param mysqli $mysqli
+// * @param string $email
+// * @param string $pswd
+// * @return int -1 on error, role of the user on success
+// */
+//function verify_user(mysqli $mysqli, string $email, string $pswd): int
+//{
+//    if (!$mysqli->connect_errno) {
+//        $email = filter_var($email, FILTER_SANITIZE_EMAIL);
+//        $stmt = $mysqli->prepare('SELECT heslo FROM osobne_udaje, poslanec WHERE poslanec.id_udaje=osobne_udaje.id AND osobne_udaje.email=?');
+//        $stmt->bind_param('s', $email);
+//        $stmt->execute();
+//        $result = $stmt->get_result();
+//        $stmt->close();
+//        if ($result->num_rows > 0) {
+//            $row = $result->fetch_assoc();
+//            $result->free();
+//            if (password_verify($pswd, $row['heslo'])) return ROLE_POSLANEC;
+//            else return -1; // nespravne heslo
+//        } else {
+//            $stmt = $mysqli->prepare('SELECT heslo FROM osobne_udaje, admin WHERE admin.id_udaje=osobne_udaje.id AND osobne_udaje.email=?');
+//            $stmt->bind_param('s', $email);
+//            $stmt->execute();
+//            $result = $stmt->get_result();
+//            $stmt->close();
+//            if ($result->num_rows > 0) {
+//                $row = $result->fetch_assoc();
+//                $result->free();
+//                if (password_verify($pswd, $row['heslo'])) return ROLE_ADMIN;
+//                else return -1; // nespravne heslo
+//            }
+//        }
+//    }
+//    return -1;
+//}
 
 /**
  * queries the database to find if the user exists

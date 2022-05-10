@@ -1,4 +1,5 @@
 <?php
+include('classes.php');
 session_start();
 include('constants.php');
 include('functions.php');
@@ -8,6 +9,7 @@ include('database.php');
 $poslanci = get_all_poslanci($mysqli);
 $poslanci = partition($poslanci, 3);
 
+// todo: prerobit update poslanca
 if (isset($_POST['submit']) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
     $error = false;
     if (empty($_POST['poslanec_id'])) $error = true;
@@ -37,10 +39,9 @@ if (isset($_POST['submit']) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
 
 if (isset($_GET['poslanec_id'])) {
     // TODO: pridat tlacidlo na navrat na zoznam poslancov, t. j. unsetnut get parameter
-    $poslanec = select_poslanec($mysqli, id: $_GET['poslanec_id']);
-    if (empty($poslanec)) display_error('Zadaný poslanec sa nenašiel');
-    else {
-        $bezp_prev = get_bezp_previerka($mysqli, id: $_GET['poslanec_id']); ?>
+    try {
+        $poslanec = new Poslanec($mysqli, $_GET['poslanec_id']);
+        if ($poslanec->udaje->id_previerka != null) $bezp_prev = new BezpecnostnaPrevierka($mysqli, $poslanec->udaje->id_previerka); ?>
         <div class="container">
             <div class="row">
                 <div class="col-md-12">
@@ -49,26 +50,29 @@ if (isset($_GET['poslanec_id'])) {
                         <div class="col-md-4">
                             <h6>Meno a priezvisko:</h6>
                             <div class="bg-secondary bg-opacity-25 container mb-4">
-                                <?= join(' ', array_slice($poslanec, 4, 2)) ?></div>
+                                <?= $poslanec->udaje->meno . ' ' . $poslanec->udaje->priezvisko ?></div>
                             <h6>Email:</h6>
-                            <div class="bg-secondary bg-opacity-25 container mb-4"><?= $poslanec['email'] ?></div>
+                            <div class="bg-secondary bg-opacity-25 container mb-4"><?= $poslanec->udaje->email ?></div>
                         </div>
                         <div class="col-md-4">
                             <h6>Titul:</h6>
-                            <div class="bg-secondary bg-opacity-25 container mb-4"><?= $poslanec['titul'] ?></div>
+                            <div class="bg-secondary bg-opacity-25 container mb-4"><?= $poslanec->udaje->titul ?: '-' ?></div>
                             <?php if ($_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
                                 <h6>Bezpečnostná previerka:</h6>
-                                <div class="bg-secondary bg-opacity-25 container mb-4"><?= ($bezp_prev['uroven'] ?? '-');
-                                    if (isset($bezp_prev['uroven'])) echo $bezp_prev['platnost'] ? ' (platná)' : ' (neplatná)'; ?></div>
+                                <div class="bg-secondary bg-opacity-25 container mb-4"><?= ($bezp_prev->uroven ?? '-');
+                                    if (isset($bezp_prev)) echo $bezp_prev->platnost ? ' (platná)' : ' (neplatná)'; ?></div>
                             <?php } ?>
                         </div>
                         <div class="col-md-4">
                             <h6>Adresa:</h6>
-                            <div class="bg-secondary bg-opacity-25 container mb-4"><?= $poslanec['adresa'] ?></div>
+                            <div class="bg-secondary bg-opacity-25 container mb-4"><?= $poslanec->udaje->adresa ?></div>
                             <?php if ($_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
                                 <h6>BP udelil:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4">
-                                    <?= join(' ', array_slice($bezp_prev ?? [], 4, 2)) ?: '-' ?></div>
+                                    <?php if (isset($bezp_prev)) {
+                                        $udelil = new Admin($mysqli, $bezp_prev->kto_udelil);
+                                        echo $udelil->udaje->meno . ' ' . $udelil->udaje->priezvisko;
+                                    } else echo '-'; ?></div>
                             <?php } ?>
                         </div>
                     </div>
@@ -98,7 +102,7 @@ if (isset($_GET['poslanec_id'])) {
 
                                 <input type="email" class="form-control" id="email" placeholder="Zadajte email"
                                        name="email"
-                                       value="<?= $poslanec['email'] ?>">
+                                       value="<?= $poslanec->udaje->email ?>">
                                 <div class="invalid-feedback">Zadajte platný email</div>
                             </div>
                             <div class="mb-3">
@@ -112,7 +116,7 @@ if (isset($_GET['poslanec_id'])) {
                                         $l = explode(' ', $l)[0]; ?>
                                         <input class="form-check-input" type="checkbox" value="<?= $spec ?>"
                                                id="sp_<?= $l ?>"
-                                               name="specializacia[]" <?php if (in_array($spec, explode(',', $poslanec['specializacia']))) echo ' checked' ?>>
+                                               name="specializacia[]" <?php if (in_array($spec, $poslanec->specializacia)) echo ' checked' ?>>
                                         <label class="form-check-label" for="sp_<?= $l ?>"><?= $spec ?></label><br>
                                     <?php } ?>
                                 </div>
@@ -124,7 +128,7 @@ if (isset($_GET['poslanec_id'])) {
                                     </label>
                                     <input type="text" class="form-control" id="titul" placeholder="Zadajte titul"
                                            name="titul"
-                                           value="<?= $poslanec['titul'] ?>">
+                                           value="<?= $poslanec->udaje->titul ?>">
                                 </div>
                                 <div class="col-md-9">
                                     <label for="meno_priezvisko" class="form-label">Meno a priezvisko:
@@ -133,7 +137,7 @@ if (isset($_GET['poslanec_id'])) {
                                     </label>
                                     <input type="text" class="form-control" id="meno_priezvisko"
                                            placeholder="Zadajte meno a priezvisko" name="cele_meno"
-                                           value="<?= join(' ', array_slice($poslanec, 4, 2)) ?>">
+                                           value="<?= $poslanec->udaje->meno . ' ' . $poslanec->udaje->priezvisko ?>">
                                     <div class="invalid-feedback" id="meno_feedback"></div>
                                 </div>
                             </div>
@@ -144,7 +148,7 @@ if (isset($_GET['poslanec_id'])) {
                                 <!--                    <input type="text" class="form-control" id="adresa" placeholder="Zadajte adresu"-->
                                 <!--                           name="adresa" value="" required>-->
                                 <textarea class="form-control" id="adresa" placeholder="Zadajte adresu"
-                                          name="adresa" rows="5"><?= $poslanec['adresa'] ?></textarea>
+                                          name="adresa" rows="5"><?= $poslanec->udaje->adresa ?></textarea>
                                 <div class="invalid-feedback" id="adresa_feedback"></div>
                             </div>
                             <!--                            <div class="row mb-3">-->
@@ -171,6 +175,9 @@ if (isset($_GET['poslanec_id'])) {
             <?php } ?>
         </div>
     <?php }
+    catch (UserNotFoundException) {
+        display_error('Zadaný poslanec sa nenašiel');
+    }
 } else { ?>
     <div class="container">
         <div class="row">
