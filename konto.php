@@ -4,7 +4,6 @@ session_start();
 include('constants.php');
 include('functions.php');
 include('database.php');
-head(isset($_SESSION[SESSION_USER]) ? 'Konto' : 'Prihlásenie');
 // overenie udajov treba robit skor ako sa spusti navbar, aby sa prihlasenie hned prejavilo
 if (isset($_POST['login'])) {
 //    $verify = verify_user($mysqli, $_POST['email'], $_POST['pswd']);
@@ -32,6 +31,7 @@ if (isset($_POST['login'])) {
         } else $password_incorrect = true;
     }
 }
+head(isset($_SESSION[SESSION_USER]) ? 'Konto' : 'Prihlásenie');
 include('navbar.php');
 
 if (!isset($_SESSION[SESSION_USER])) { ?>
