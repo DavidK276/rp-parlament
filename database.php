@@ -6,5 +6,9 @@ if ($mysqli -> connect_errno) {
 }
 else {
     $mysqli -> set_charset('utf8mb4');
+    Admin::$mysqli = $mysqli;
+    Poslanec::$mysqli = $mysqli;
+    OsobneUdaje::$mysqli = $mysqli;
+    BezpecnostnaPrevierka::$mysqli = $mysqli;
 }
 

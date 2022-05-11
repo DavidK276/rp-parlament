@@ -15,16 +15,26 @@
                 <li class="nav-item">
                     <a class="nav-link <?php if ($page == "poslanci.php") echo 'active' ?>" href="poslanci.php">Poslanci</a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link <?php if ($page == "schodze.php") echo 'active' ?>" href="#">Schôdze</a>
-                </li>
+                <?php
+                if (isset($_SESSION[SESSION_USER])) { ?>
+                    <?php if ($_SESSION[SESSION_USER] instanceof Admin) { ?>
+                        <li class="nav-item">
+                            <a class="nav-link <?php if ($page == "admins.php") echo 'active' ?>" href="admins.php"
+                               tabindex="-1"
+                               aria-disabled="true">Admini</a>
+                        </li>
+                    <?php } ?>
+                <?php } ?>
+<!--                <li class="nav-item">-->
+<!--                    <a class="nav-link --><?php //if ($page == "schodze.php") echo 'active' ?><!--" href="#">Schôdze</a>-->
+<!--                </li>-->
                 <li class="nav-item">
                     <a class="nav-link <?php if ($page == "konto.php") echo 'active' ?>" href="konto.php" tabindex="-1"
                        aria-disabled="true"><?php echo isset($_SESSION[SESSION_USER]) ? 'Konto' : 'Prihlásenie' ?></a>
                 </li>
                 <?php
                 if (isset($_SESSION[SESSION_USER])) { ?>
-                    <?php if ($_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
+                    <?php if ($_SESSION[SESSION_USER] instanceof Admin) { ?>
                         <li class="nav-item">
                             <a class="nav-link <?php if ($page == "newuser.php") echo 'active' ?>" href="newuser.php"
                                tabindex="-1"

@@ -6,64 +6,50 @@ include('functions.php');
 head('Poslanci');
 include('navbar.php');
 include('database.php');
-$poslanci = get_all_poslanci($mysqli);
-$poslanci = partition($poslanci, 3);
 
-if (isset($_POST['submit']) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
-//    $error = false;
-//    if (empty($_POST['poslanec_id'])) $error = true;
-//    else if (empty($_POST['email'])) $error = true;
-//    else if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) $error = true;
-//    else if (strlen($_POST['titul']) > 20) $error = true;
-//    else if (empty($_POST['cele_meno']) || strlen($_POST['cele_meno']) > 60 || !verify_name($_POST['cele_meno'])) $error = true;
-//    else if (empty($_POST['adresa']) || strlen($_POST['adresa']) > 100 || strlen($_POST['adresa']) < 6) $error = true;
-//    if ($error) {
-//        http_response_code(400);
-//        display_error('Chybná požiadavka.');
-//    } else {
-//        // ak je vstup platny, vlozit do databazy
-//        $poslanec = array();
-//        $poslanec['id'] = sanitise($_POST['poslanec_id']);
-//        $poslanec['email'] = sanitise(filter_var($_POST['email'], FILTER_SANITIZE_EMAIL));
-//        $poslanec['titul'] = sanitise($_POST['titul']);
-//        $whole_name = sanitise($_POST['cele_meno']);
-//        $poslanec['meno'] = explode(' ', $whole_name)[0];
-//        $poslanec['priezvisko'] = explode(' ', $whole_name)[1];
-//        $poslanec['adresa'] = sanitise($_POST['adresa']);
-//        if (!isset($_POST['specializacia'])) $poslanec['specializacia'] = '';
-//        else $poslanec['specializacia'] = implode(',', $_POST['specializacia']);
-//        $result = update_poslanec($mysqli, $poslanec);
-//    }
-    $poslanec = new Poslanec($mysqli, $_POST['poslanec_id']);
-    $poslanec->udaje->email = $_POST['email'];
-    $name = explode(' ', $_POST['cele_meno']);
-    $poslanec->udaje->meno = $name[0];
-    $poslanec->udaje->priezvisko = $name[1];
-    $poslanec->udaje->titul = $_POST['titul'];
-    $poslanec->udaje->adresa = $_POST['adresa'];
-    $poslanec->specializacia = $_POST['specializacia'];
+if (isset($_POST['delete']) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN){
+    $poslanec = new Poslanec($_POST['delete_id']);
     try {
+        $poslanec->delete();
+    }
+    catch (UserNotFoundException) {
+        display_error('Zadaný poslanec neexistuje.');
+    }
+    finally {
+        header('location:poslanci.php');
+    }
+}
+if (isset($_POST['submit']) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
+    try {
+        $poslanec = new Poslanec($_POST['poslanec_id']);
+        $poslanec->udaje->email = $_POST['email'];
+        $name = explode(' ', $_POST['cele_meno']);
+        $poslanec->udaje->meno = $name[0];
+        $poslanec->udaje->priezvisko = $name[1];
+        $poslanec->udaje->titul = $_POST['titul'] ?? '';
+        $poslanec->udaje->adresa = $_POST['adresa'];
+        $poslanec->specializacia = $_POST['specializacia'];
         $poslanec->update();
         $result = SUCCESS;
-    }
-    catch (AttributeException | UserNotFoundException) {
+    } catch (AttributeException|UserNotFoundException|TypeError) {
         http_response_code(400);
         display_error('Chybná požiadavka');
-    }
-    catch (UserExistsException) {
+    } catch (UserExistsException) {
         $result = ERROR_USER_EXISTS;
     }
 }
 
 if (isset($_GET['poslanec_id'])) {
-    // TODO: pridat tlacidlo na navrat na zoznam poslancov, t. j. unsetnut get parameter
     try {
-        $poslanec = new Poslanec($mysqli, $_GET['poslanec_id']);
-        if ($poslanec->udaje->id_previerka != null) $bezp_prev = new BezpecnostnaPrevierka($mysqli, $poslanec->udaje->id_previerka); ?>
+        $poslanec = new Poslanec($_GET['poslanec_id']);
+        if ($poslanec->udaje->id_previerka != null) $bezp_prev = new BezpecnostnaPrevierka($poslanec->udaje->id_previerka); ?>
         <div class="container">
             <div class="row">
                 <div class="col-md-12">
-                    <h2>Stránka poslanca</h2>
+                    <div class="d-flex pb-4 align-items-center">
+                        <h2>Stránka poslanca</h2>
+                        <a href="poslanci.php" class="px-3" style="text-decoration: none">&lt;&lt;&nbsp;naspäť</a>
+                    </div>
                     <div class="row">
                         <div class="col-md-4">
                             <h6>Meno a priezvisko:</h6>
@@ -88,7 +74,7 @@ if (isset($_GET['poslanec_id'])) {
                                 <h6>BP udelil:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4">
                                     <?php if (isset($bezp_prev)) {
-                                        $udelil = new Admin($mysqli, $bezp_prev->kto_udelil);
+                                        $udelil = new Admin($bezp_prev->kto_udelil);
                                         echo $udelil->udaje->meno . ' ' . $udelil->udaje->priezvisko;
                                     } else echo '-'; ?></div>
                             <?php } ?>
@@ -102,11 +88,15 @@ if (isset($_GET['poslanec_id'])) {
                         <button type="button" class="btn btn-primary" data-bs-toggle="collapse"
                                 data-bs-target="#form_edit">Upraviť
                         </button>
+                        <form method="post" class="d-inline">
+                            <input type="hidden" name="delete_id" value="<?= $_GET['poslanec_id'] ?>">
+                            <button type="submit" class="btn btn-danger" name="delete">Vymazať</button>
+                        </form>
                         <?php if (isset($result)) {
                             if ($result == SUCCESS) echo '<p class="d-inline mx-2 text-success">Poslanec upravený</p>';
                             else if ($result == ERROR_USER_EXISTS) echo '<p class="d-inline mx-2 text-danger">Zadaný email sa už používa!</p>';
                             else if ($result == ERROR_UNKNOWN) echo '<p class="d-inline mx-2 text-danger">Neznáma chyba</p>';
-                        }?>
+                        } ?>
                     </div>
                 </div>
                 <div class="row">
@@ -119,8 +109,7 @@ if (isset($_GET['poslanec_id'])) {
                                 </label>
 
                                 <input type="email" class="form-control" id="email" placeholder="Zadajte email"
-                                       name="email"
-                                       value="<?= $poslanec->udaje->email ?>">
+                                       name="email" required value="<?= $poslanec->udaje->email ?>">
                                 <div class="invalid-feedback">Zadajte platný email</div>
                             </div>
                             <div class="mb-3">
@@ -155,7 +144,7 @@ if (isset($_GET['poslanec_id'])) {
                                     </label>
                                     <input type="text" class="form-control" id="meno_priezvisko"
                                            placeholder="Zadajte meno a priezvisko" name="cele_meno"
-                                           value="<?= $poslanec->udaje->meno . ' ' . $poslanec->udaje->priezvisko ?>">
+                                           value="<?= $poslanec->udaje->meno . ' ' . $poslanec->udaje->priezvisko ?>" required>
                                     <div class="invalid-feedback" id="meno_feedback"></div>
                                 </div>
                             </div>
@@ -166,25 +155,9 @@ if (isset($_GET['poslanec_id'])) {
                                 <!--                    <input type="text" class="form-control" id="adresa" placeholder="Zadajte adresu"-->
                                 <!--                           name="adresa" value="" required>-->
                                 <textarea class="form-control" id="adresa" placeholder="Zadajte adresu"
-                                          name="adresa" rows="5"><?= $poslanec->udaje->adresa ?></textarea>
+                                          name="adresa" rows="5" required><?= $poslanec->udaje->adresa ?></textarea>
                                 <div class="invalid-feedback" id="adresa_feedback"></div>
                             </div>
-                            <!--                            <div class="row mb-3">-->
-                            <!--                                <div class="col-md-6">-->
-                            <!--                                    <label for="pwd" class="form-label"><b class="text-danger">*</b>&nbsp;Heslo:-->
-                            <!--                                        <i class="material-icons" title="Heslá sa musia zhodovať">help</i>-->
-                            <!--                                    </label>-->
-                            <!--                                    <input type="password" class="form-control" id="pwd" placeholder="Vytvorte heslo" name="heslo0"-->
-                            <!--                                           value="" required>-->
-                            <!--                        <div class="invalid-feedback">Zadajte heslo</div>-->
-                            <!--                                </div>-->
-                            <!--                                <div class="col-md-6">-->
-                            <!--                                    <label for="pwd_rep" class="form-label invisible">Zopakovať heslo:</label>-->
-                            <!--                                    <input type="password" class="form-control" id="pwd_rep" placeholder="Zopakovať heslo"-->
-                            <!--                                           name="heslo1" value="" required>-->
-                            <!--                                    <div class="invalid-feedback" id="pwd_feedback"></div>-->
-                            <!--                                </div>-->
-                            <!--                            </div>-->
                             <input type="hidden" name="poslanec_id" value="<?= $_GET['poslanec_id'] ?>">
                             <button type="submit" name="submit" class="btn btn-primary">Potvrdiť</button>
                         </form>
@@ -192,11 +165,12 @@ if (isset($_GET['poslanec_id'])) {
                 </div>
             <?php } ?>
         </div>
-    <?php }
-    catch (UserNotFoundException) {
+    <?php } catch (UserNotFoundException) {
         display_error('Zadaný poslanec sa nenašiel');
     }
-} else { ?>
+} else {
+    $poslanci = get_all_poslanci($mysqli);
+    $poslanci = partition($poslanci, 3); ?>
     <div class="container">
         <div class="row">
             <div class="col-md-4">

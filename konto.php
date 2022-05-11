@@ -6,30 +6,24 @@ include('functions.php');
 include('database.php');
 // overenie udajov treba robit skor ako sa spusti navbar, aby sa prihlasenie hned prejavilo
 if (isset($_POST['login'])) {
-//    $verify = verify_user($mysqli, $_POST['email'], $_POST['pswd']);
-//    if ($verify == ROLE_POSLANEC) {
-//        // spravne udaje
-//        $_SESSION[SESSION_USER] = select_poslanec($mysqli, $_POST['email']);
-//        $_SESSION[SESSION_USER_ROLE] = ROLE_POSLANEC;
-//    } else if ($verify == ROLE_ADMIN) {
-//        $_SESSION[SESSION_USER] = select_admin($mysqli, $_POST['email']);
-//        $_SESSION[SESSION_USER_ROLE] = ROLE_ADMIN;
-//    } else {
-//        // nespravne udaje
-//        $password_incorrect = true;
-//    }
-    $admin = new Admin($mysqli);
+    $admin = new Admin();
     if ($admin->login($_POST['email'], $_POST['pswd'])) {
         $_SESSION[SESSION_USER] = $admin;
         $_SESSION[SESSION_USER_ROLE] = ROLE_ADMIN;
     } else {
         unset($admin);
-        $poslanec = new Poslanec($mysqli);
+        $poslanec = new Poslanec();
         if ($poslanec->login($_POST['email'], $_POST['pswd'])) {
             $_SESSION[SESSION_USER] = $poslanec;
             $_SESSION[SESSION_USER_ROLE] = ROLE_POSLANEC;
         } else $password_incorrect = true;
     }
+} else if (isset($_SESSION[SESSION_USER]) && isset($_POST['change_pswd'])) {
+    $user = $_SESSION[SESSION_USER];
+    if ($user->login($user->udaje->email, $_POST['stare_heslo'])) {
+        $user->update_heslo($_POST['heslo0']);
+        $password_update = true;
+    } else $password_update = false;
 }
 head(isset($_SESSION[SESSION_USER]) ? 'Konto' : 'Prihlásenie');
 include('navbar.php');
@@ -71,7 +65,7 @@ if (!isset($_SESSION[SESSION_USER])) { ?>
                 <div class="row">
                     <div class="col-md-4">
                         <?php $user = $_SESSION[SESSION_USER];
-                        if ($user->udaje->id_previerka != null) $bezp_prev = new BezpecnostnaPrevierka($mysqli, $user->udaje->id_previerka); ?>
+                        if ($user->udaje->id_previerka != null) $bezp_prev = new BezpecnostnaPrevierka($user->udaje->id_previerka); ?>
                         <h6>Meno a priezvisko:</h6>
                         <div class="bg-secondary bg-opacity-25 container mb-4"><?= $user->udaje->meno . ' ' . $user->udaje->priezvisko ?></div>
                         <h6>Bezpečnostná previerka:</h6>
@@ -84,7 +78,7 @@ if (!isset($_SESSION[SESSION_USER])) { ?>
                         <h6>BP udelil:</h6>
                         <div class="bg-secondary bg-opacity-25 container mb-4">
                             <?php if (isset($bezp_prev)) {
-                                $udelil = new Admin($mysqli, $bezp_prev->kto_udelil);
+                                $udelil = new Admin($bezp_prev->kto_udelil);
                                 echo $udelil->udaje->meno . ' ' . $udelil->udaje->priezvisko;
                             } else echo '-'; ?></div>
                     </div>
@@ -100,29 +94,40 @@ if (!isset($_SESSION[SESSION_USER])) { ?>
                 <button type="button" class="btn btn-primary" data-bs-toggle="collapse"
                         data-bs-target="#form_heslo">Zmeniť heslo
                 </button>
+                <?php if (isset($password_update)) echo $password_update ?
+                    '<p class="d-inline mx-2 text-success">Heslo zmenené!' :
+                    '<p class="d-inline mx-2 text-danger">Nesprávne staré heslo!' . '</p>' ?>
             </div>
         </div>
         <div class="row">
-            <div class="col-md-8">
+            <div class="col-md-12">
                 <form method="post" class="needs-validation collapse" id="form_heslo" novalidate>
                     <div class="row my-3">
-                        <div class="col-md-6">
-                            <label for="pwd" class="form-label"><b class="text-danger">*</b>&nbsp;Heslo:
+                        <div class="col-md-4">
+                            <label for="old_pwd" class="form-label"><b class="text-danger">*</b>&nbsp;Pôvodné
+                                heslo:</label>
+                            <input type="password" class="form-control" id="old_pwd" placeholder="Zadajte heslo"
+                                   name="stare_heslo"
+                                   value="" required>
+                            <div class="invalid-feedback">Zadajte heslo</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="pwd" class="form-label"><b class="text-danger">*</b>&nbsp;Nové heslo:
                                 <i class="material-icons" title="Heslá sa musia zhodovať">help</i>
                             </label>
                             <input type="password" class="form-control" id="pwd" placeholder="Vytvorte heslo"
                                    name="heslo0"
                                    value="" required>
-                            <div class="invalid-feedback" id="pwd_feedback">Zadajte heslo</div>
+                            <div class="invalid-feedback" id="pwd_feedback">Zadajte nové heslo</div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="pwd_rep" class="form-label invisible">Zopakovať heslo:</label>
                             <input type="password" class="form-control" id="pwd_rep" placeholder="Zopakovať heslo"
                                    name="heslo1" value="" required>
                         </div>
                     </div>
                     <input type="hidden" name="poslanec_id" value="<?= $user->id ?>">
-                    <button type="submit" name="submit" class="btn btn-primary">Potvrdiť</button>
+                    <button type="submit" name="change_pswd" class="btn btn-primary">Potvrdiť</button>
                 </form>
             </div>
         </div>
@@ -147,7 +152,7 @@ if (!isset($_SESSION[SESSION_USER])) { ?>
                         } else {
                             pwd_rep_input.setCustomValidity('');
                             pwd_input.setCustomValidity('');
-                            document.getElementById('pwd_feedback').innerHTML = 'Zadajte heslo';
+                            document.getElementById('pwd_feedback').innerHTML = 'Zadajte nové heslo';
                         }
                         if (!form.checkValidity()) {
                             event.preventDefault();

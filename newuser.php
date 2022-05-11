@@ -58,8 +58,8 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
 //                if (!isset($_POST['specializacia'])) $poslanec['specializacia'] = '';
 //                else $poslanec['specializacia'] = implode(',', $_POST['specializacia']);
 //                $result = insert_poslanec($mysqli, $poslanec);
-            $poslanec = new Poslanec($mysqli);
-            $poslanec->udaje = new OsobneUdaje($mysqli);
+            $poslanec = new Poslanec();
+            $poslanec->udaje = new OsobneUdaje();
             $poslanec->udaje->email = $_POST['email'];
             $name = explode(' ', $_POST['cele_meno']);
             $poslanec->udaje->meno = $name[0];
@@ -85,8 +85,8 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
 //                $admin['adresa'] = sanitise($_POST['adresa']);
 //                $admin['heslo'] = $_POST['heslo0'];
 //                $result = insert_admin($mysqli, $admin);
-            $admin = new Admin($mysqli);
-            $admin->udaje = new OsobneUdaje($mysqli);
+            $admin = new Admin();
+            $admin->udaje = new OsobneUdaje();
             $admin->udaje->email = $_POST['email'];
             $name = explode(' ', $_POST['cele_meno']);
             $admin->udaje->meno = $name[0];
