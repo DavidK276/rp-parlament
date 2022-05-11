@@ -19,10 +19,10 @@ CREATE TABLE `admin` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `id_udaje` (`id_udaje`),
   CONSTRAINT `admin_ibfk_3` FOREIGN KEY (`id_udaje`) REFERENCES `osobne_udaje` (`id`) ON DELETE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `admin` (`id`, `id_udaje`, `heslo`) VALUES
-(1,	1,	'$2y$10$haJYoPWSflcbs83Svf1P/ORdRRD26IRweXa8Bw9liBfkyXJmn5Wmm'),
+(1,	1,	'$2y$10$MNTU8lNMcC0kVd8hnBnlwOkAVk1sjO037hO.vVScg5Hz2xoQ3Q84i'),
 (3,	6,	'$2y$10$I4odyis78SBKmWhO4T3MO.6FYHqxOn98hEhVKvS.R0Q0UNGP9Mqci');
 
 DROP TABLE IF EXISTS `bezp_previerka`;
@@ -35,7 +35,7 @@ CREATE TABLE `bezp_previerka` (
   PRIMARY KEY (`id`),
   KEY `kto_udelil` (`kto_udelil`),
   CONSTRAINT `bezp_previerka_ibfk_1` FOREIGN KEY (`kto_udelil`) REFERENCES `admin` (`id`) ON DELETE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `bezp_previerka` (`id`, `uroven`, `kto_udelil`, `datum`, `platnost`) VALUES
 (1,	'Prísne tajné',	1,	'2022-05-09',	CONV('1', 2, 10) + 0);
@@ -52,16 +52,22 @@ CREATE TABLE `osobne_udaje` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
   KEY `id_previerka` (`id_previerka`),
-  CONSTRAINT `osobne_udaje_ibfk_1` FOREIGN KEY (`id_previerka`) REFERENCES `bezp_previerka` (`id`) ON DELETE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  CONSTRAINT `osobne_udaje_ibfk_3` FOREIGN KEY (`id_previerka`) REFERENCES `bezp_previerka` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `osobne_udaje` (`id`, `id_previerka`, `email`, `titul`, `meno`, `priezvisko`, `adresa`) VALUES
 (1,	NULL,	'test@example.com',	'',	'David',	'Krchňavý',	'Testovacia adresa 20, Bratislava'),
 (5,	NULL,	'jozko@test.com',	'',	'Jožko',	'Púčik',	'Pod mostom SNP v Bratislave'),
-(6,	NULL,	'vajda@jozko.sk',	'',	'Jožko',	'Vajda',	'Bejby'),
-(8,	NULL,	'slopa@znamafirma.xyz',	'',	'Ján',	'Slopa',	'Tankistov, Žilina'),
-(9,	1,	'danko@example.com',	'Kpt. Plg.',	'Andrej',	'Danko',	'Stožiarová ulica, Bratislava'),
-(10,	NULL,	'testovac@example.com',	'',	'Test',	'Testu',	'Testovacia');
+(6,	NULL,	'vajda@jozko.sk',	'',	'Jožko',	'Vajda',	'Bejby 12,\r\nAdresa 3'),
+(8,	NULL,	'slopa@znamafirma.xyz',	'Slp.',	'Ján',	'Slopa',	'Tankistov, \r\nŽilina'),
+(9,	1,	'danko@example.com',	'Kpt. Plg.',	'Andrej',	'Danko',	'Stožiarová ulica, Bratislava');
+
+DELIMITER ;;
+
+CREATE TRIGGER `osobne_udaje_ad` AFTER DELETE ON `osobne_udaje` FOR EACH ROW
+BEGIN DELETE FROM bezp_previerka WHERE id=OLD.id_previerka; END;;
+
+DELIMITER ;
 
 DROP TABLE IF EXISTS `poslanec`;
 CREATE TABLE `poslanec` (
@@ -74,23 +80,22 @@ CREATE TABLE `poslanec` (
   UNIQUE KEY `id_udaje` (`id_udaje`),
   KEY `id_klub` (`id_klub`),
   CONSTRAINT `poslanec_ibfk_2` FOREIGN KEY (`id_klub`) REFERENCES `poslanecky_klub` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  CONSTRAINT `poslanec_ibfk_4` FOREIGN KEY (`id_udaje`) REFERENCES `osobne_udaje` (`id`) ON DELETE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+  CONSTRAINT `poslanec_ibfk_5` FOREIGN KEY (`id_udaje`) REFERENCES `osobne_udaje` (`id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `poslanec` (`id`, `id_udaje`, `id_klub`, `specializacia`, `heslo`) VALUES
 (5,	5,	1,	'Zahraničná politika',	'$2y$10$5tV7qMSyhXFZUv104dJZq.55q1JFuvlhV8yLWrs7R1M1Exs6sswUu'),
-(6,	8,	1,	'Zahraničná politika,Vnútroštátna bezpečnosť,Kultúra,Vzdelanie',	'$2y$10$pPz2cRNxZVYUOMFLl3hUdeFD.AV0LQLbyB0B4erFnZoyTQ4NAs1Pu'),
-(7,	9,	1,	'',	'$2y$10$Z5UfT/K5tT5oMCAeLMgF1e1AeJXUixvTHJyTB6MndoauElzvFiwI2'),
-(8,	10,	1,	'Právo',	'$2y$10$3HmPYbLt2pmXgXKJYzJACO2XxmVXPzjQBKRIV/0IoQTniaucHIZfu');
+(6,	8,	1,	'Zahraničná politika,Vnútroštátna bezpečnosť,Právo',	'$2y$10$pPz2cRNxZVYUOMFLl3hUdeFD.AV0LQLbyB0B4erFnZoyTQ4NAs1Pu'),
+(7,	9,	1,	'',	'$2y$10$Z5UfT/K5tT5oMCAeLMgF1e1AeJXUixvTHJyTB6MndoauElzvFiwI2');
 
 DROP TABLE IF EXISTS `poslanecky_klub`;
 CREATE TABLE `poslanecky_klub` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `nazov` varchar(50) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
 
 INSERT INTO `poslanecky_klub` (`id`, `nazov`) VALUES
 (1,	'Nezaradený');
 
--- 2022-05-10 04:45:15
+-- 2022-05-11 20:53:48
