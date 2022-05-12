@@ -121,7 +121,7 @@ if (isset($_GET['poslanec_id'])) {
                     </div>
                 </div>
             </div>
-            <?php if ($_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
+            <?php if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
                 <div class="row">
                     <div class="col-md-12">
                         <button type="button" class="btn btn-primary" data-bs-toggle="collapse"
