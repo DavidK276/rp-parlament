@@ -146,13 +146,7 @@ function get_all_admini(mysqli $mysqli): array
 
 
 function exception_handler(Throwable $exception): void {
-    if (DEBUG) {
-        echo "Uncaught exception: " , $exception->getMessage(), "\n";
-        exit();
-    }
-    else {
-        display_error('Nastala neznáma chyba.');
-    }
+    display_error('Nastala neznáma chyba.');
 }
 
-//set_exception_handler('exception_handler');
+if (!DEBUG) set_exception_handler('exception_handler');
