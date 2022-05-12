@@ -20,53 +20,52 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
             display_error('Chybná požiadavka');
         }
     } else if (isset($_POST['submit_bp']) && isset($_GET['poslanec_id'])) {
-        $poslanec = new Poslanec($_GET['poslanec_id']);
-        if ($poslanec->udaje->id_previerka != null) {
-            try {
+        try {
+            $poslanec = new Poslanec($_GET['poslanec_id']);
+            if ($poslanec->udaje->id_previerka != null) {
                 $bezp_prev = new BezpecnostnaPrevierka($poslanec->udaje->id_previerka);
-                $bezp_prev->uroven = $_POST['uroven'];
+                $bezp_prev->uroven = $_POST['uroven'] ?? '';
                 $bezp_prev->kto_udelil = $_SESSION[SESSION_USER]->id;
                 $bezp_prev->update_uroven();
-            } catch (AttributeException) {
-                http_response_code(400);
-                display_error('Chybná požiadavka');
-            }
-        } else {
-            try {
+            } else {
                 $bezp_prev = new BezpecnostnaPrevierka();
-                $bezp_prev->uroven = $_POST['uroven'];
+                $bezp_prev->uroven = $_POST['uroven'] ?? '';
                 $bezp_prev->kto_udelil = $_SESSION[SESSION_USER]->id;
                 $bezp_prev->insert();
                 $poslanec->udaje->id_previerka = $bezp_prev->id;
                 $poslanec->udaje->update();
-            } catch (AttributeException) {
-                http_response_code(400);
-                display_error('Chybná požiadavka');
             }
-        }
-    }
-    else if (isset($_POST['delete'])){
-        $poslanec = new Poslanec($_POST['delete_id']);
-        try {
-            $poslanec->delete();
+        } catch (AttributeException|UserExistsException) {
+            http_response_code(400);
+            display_error('Chybná požiadavka');
         }
         catch (UserNotFoundException) {
-            display_error('Zadaný poslanec neexistuje.');
+            http_response_code(404);
+            display_error('Zadaný poslanec neexistuje alebo už bol vymazaný.');
         }
-        finally {
+    } else if (isset($_POST['delete'])) {
+        try {
+            $poslanec = new Poslanec($_POST['delete_id'] ?? 0);
+            $poslanec->delete();
+        } catch (UserNotFoundException) {
+            http_response_code(404);
+            display_error('Zadaný poslanec neexistuje alebo už bol vymazaný.');
+        } catch (AttributeException) {
+            http_response_code(400);
+            display_error('Chybná požiadavka');
+        } finally {
             header('location:poslanci.php');
         }
-    }
-    else if (isset($_POST['submit'])) {
+    } else if (isset($_POST['submit'])) {
         try {
-            $poslanec = new Poslanec($_POST['poslanec_id']);
-            $poslanec->udaje->email = $_POST['email'];
-            $name = explode(' ', $_POST['cele_meno']);
-            $poslanec->udaje->meno = $name[0];
-            $poslanec->udaje->priezvisko = $name[1];
+            $poslanec = new Poslanec($_POST['poslanec_id'] ?? 0);
+            $poslanec->udaje->email = $_POST['email'] ?? '';
+            $name = explode(' ', $_POST['cele_meno'] ?? '');
+            $poslanec->udaje->meno = $name[0] ?? '';
+            $poslanec->udaje->priezvisko = $name[1] ?? '';
             $poslanec->udaje->titul = $_POST['titul'] ?? '';
-            $poslanec->udaje->adresa = $_POST['adresa'];
-            $poslanec->specializacia = $_POST['specializacia'];
+            $poslanec->udaje->adresa = $_POST['adresa'] ?? '';
+            $poslanec->specializacia = $_POST['specializacia'] ?? '';
             $poslanec->update();
             $result = SUCCESS;
         } catch (AttributeException|UserNotFoundException|TypeError) {
@@ -160,7 +159,7 @@ if (isset($_GET['poslanec_id'])) {
                                 </label>
                                 <input type="hidden" id="hidden_field" value="">
                                 <div class="form-check">
-                                    <?php foreach (get_spec_values($mysqli) as $spec) {
+                                    <?php foreach (get_spec_values($GLOBALS['mysqli']) as $spec) {
                                         $l = strtolower($spec);
                                         $l = explode(' ', $l)[0]; ?>
                                         <input class="form-check-input" type="checkbox" value="<?= $spec ?>"
@@ -186,7 +185,8 @@ if (isset($_GET['poslanec_id'])) {
                                     </label>
                                     <input type="text" class="form-control" id="meno_priezvisko"
                                            placeholder="Zadajte meno a priezvisko" name="cele_meno"
-                                           value="<?= $poslanec->udaje->meno . ' ' . $poslanec->udaje->priezvisko ?>" required>
+                                           value="<?= $poslanec->udaje->meno . ' ' . $poslanec->udaje->priezvisko ?>"
+                                           required>
                                     <div class="invalid-feedback" id="meno_feedback"></div>
                                 </div>
                             </div>
@@ -217,7 +217,8 @@ if (isset($_GET['poslanec_id'])) {
                                     $previerka = $bezp_prev ?? new BezpecnostnaPrevierka();
                                     foreach ($previerka->vsetky_urovne as $ur) { ?>
                                         <input type="radio" name="uroven" id="uroven_admin" value="<?= $ur ?>"
-                                               required aria-selected="true" <?php if ($ur == $previerka->uroven) echo 'checked' ?>>
+                                               required
+                                               aria-selected="true" <?php if ($ur == $previerka->uroven) echo 'checked' ?>>
                                         <label for="uroven_admin"><?= $ur ?></label>
                                     <?php } ?>
                                     <div class="invalid-feedback">Vyberte úroveň</div>
@@ -226,8 +227,9 @@ if (isset($_GET['poslanec_id'])) {
                             <button type="submit" name="submit_bp"
                                     class="btn btn-primary"><?= ($previerka->id > 0) ? 'Upraviť' : 'Udeliť' ?></button>
                             <?php if ($previerka->id > 0) { ?>
-                                <button type="submit" name="toggle_bp" class="btn <?= $previerka->platnost ? 'btn-danger' : 'btn-success'
-                                ?>"><?= $previerka->platnost ? 'Zrušiť platnosť' : 'Obnoviť platnosť' ?></button>
+                                <button type="submit" name="toggle_bp"
+                                        class="btn <?= $previerka->platnost ? 'btn-danger' : 'btn-success'
+                                        ?>"><?= $previerka->platnost ? 'Zrušiť platnosť' : 'Obnoviť platnosť' ?></button>
                             <?php } ?>
                         </form>
                     </div>
@@ -235,10 +237,11 @@ if (isset($_GET['poslanec_id'])) {
             <?php } ?>
         </div>
     <?php } catch (UserNotFoundException) {
+        http_response_code(404);
         display_error('Zadaný poslanec sa nenašiel');
     }
 } else {
-    $poslanci = get_all_poslanci($mysqli);
+    $poslanci = get_all_poslanci($GLOBALS['mysqli']);
     $poslanci = partition($poslanci, 3); ?>
     <div class="container">
         <div class="row">
@@ -277,7 +280,7 @@ include('footer.php'); ?>
         'use strict'
 
         // Fetch all the forms we want to apply custom Bootstrap validation styles to
-        var forms = document.querySelectorAll('.needs-validation');
+        let forms = document.querySelectorAll('.needs-validation');
 
         // Loop over them and prevent submission
         Array.prototype.slice.call(forms)

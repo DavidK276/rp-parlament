@@ -8,42 +8,35 @@ include('navbar.php');
 include('database.php');
 
 if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
-    if (isset($_POST['toggle_bp']) && isset($_GET['admin_id'])) {
-        try {
+    try {
+        if (isset($_POST['toggle_bp']) && isset($_GET['admin_id'])) {
             $admin = new Admin($_GET['admin_id']);
             if ($admin->udaje->id_previerka != null) {
                 $bezp_prev = new BezpecnostnaPrevierka($admin->udaje->id_previerka);
                 $bezp_prev->update_platnost();
             }
-        } catch (AttributeException|UserNotFoundException) {
-            http_response_code(400);
-            display_error('Chybná požiadavka');
-        }
-    } else if (isset($_POST['submit_bp']) && isset($_GET['admin_id'])) {
-        $admin = new Admin($_GET['admin_id']);
-        if ($admin->udaje->id_previerka != null) {
-            try {
+        } else if (isset($_POST['submit_bp']) && isset($_GET['admin_id'])) {
+            $admin = new Admin($_GET['admin_id']);
+            if ($admin->udaje->id_previerka != null) {
                 $bezp_prev = new BezpecnostnaPrevierka($admin->udaje->id_previerka);
                 $bezp_prev->uroven = $_POST['uroven'];
                 $bezp_prev->kto_udelil = $_SESSION[SESSION_USER]->id;
                 $bezp_prev->update_uroven();
-            } catch (AttributeException) {
-                http_response_code(400);
-                display_error('Chybná požiadavka');
-            }
-        } else {
-            try {
+            } else {
                 $bezp_prev = new BezpecnostnaPrevierka();
                 $bezp_prev->uroven = $_POST['uroven'];
                 $bezp_prev->kto_udelil = $_SESSION[SESSION_USER]->id;
                 $bezp_prev->insert();
                 $admin->udaje->id_previerka = $bezp_prev->id;
                 $admin->udaje->update();
-            } catch (AttributeException) {
-                http_response_code(400);
-                display_error('Chybná požiadavka');
             }
         }
+    } catch (UserNotFoundException) {
+        http_response_code(404);
+        display_error('Zadaný admin neexistuje.');
+    } catch (AttributeException|UserExistsException) {
+        http_response_code(400);
+        display_error('Chybná požiadavka');
     }
     if (isset($_POST['submit'])) {
         try {
@@ -64,10 +57,11 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
         }
     }
     if (isset($_POST['delete'])) {
-        $admin = new Admin($_POST['delete_id']);
         try {
+            $admin = new Admin($_POST['delete_id']);
             $admin->delete();
         } catch (UserNotFoundException) {
+            http_response_code(404);
             display_error('Zadaný admin neexistuje.');
         } finally {
             header('location:admins.php');
@@ -94,23 +88,19 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
                             <div class="col-md-4">
                                 <h6>Titul:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4"><?= $admin->udaje->titul ?: '-' ?></div>
-                                <?php if ($_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
-                                    <h6>Bezpečnostná previerka:</h6>
-                                    <div class="bg-secondary bg-opacity-25 container mb-4"><?= ($bezp_prev->uroven ?? '-');
-                                        if (isset($bezp_prev)) echo $bezp_prev->platnost ? ' (platná)' : ' (neplatná)'; ?></div>
-                                <?php } ?>
+                                <h6>Bezpečnostná previerka:</h6>
+                                <div class="bg-secondary bg-opacity-25 container mb-4"><?= ($bezp_prev->uroven ?? '-');
+                                    if (isset($bezp_prev)) echo $bezp_prev->platnost ? ' (platná)' : ' (neplatná)'; ?></div>
                             </div>
                             <div class="col-md-4">
                                 <h6>Adresa:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4"><?= $admin->udaje->adresa ?></div>
-                                <?php if ($_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
-                                    <h6>BP udelil:</h6>
-                                    <div class="bg-secondary bg-opacity-25 container mb-4">
-                                        <?php if (isset($bezp_prev)) {
-                                            $udelil = new Admin($bezp_prev->kto_udelil);
-                                            echo $udelil->udaje->meno . ' ' . $udelil->udaje->priezvisko;
-                                        } else echo '-'; ?></div>
-                                <?php } ?>
+                                <h6>BP udelil:</h6>
+                                <div class="bg-secondary bg-opacity-25 container mb-4">
+                                    <?php if (isset($bezp_prev)) {
+                                        $udelil = new Admin($bezp_prev->kto_udelil);
+                                        echo $udelil->udaje->meno . ' ' . $udelil->udaje->priezvisko;
+                                    } else echo '-'; ?></div>
                             </div>
                         </div>
                     </div>
@@ -216,7 +206,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
             display_error('Zadaný admin sa nenašiel');
         }
     } else {
-        $admini = get_all_admini($mysqli);
+        $admini = get_all_admini($GLOBALS['mysqli']);
         $admini = partition($admini, 3); ?>
         <div class="container">
             <div class="row">
@@ -259,7 +249,7 @@ include('footer.php'); ?>
         'use strict'
 
         // Fetch all the forms we want to apply custom Bootstrap validation styles to
-        var forms = document.querySelectorAll('.needs-validation');
+        const forms = document.querySelectorAll('.needs-validation');
 
         // Loop over them and prevent submission
         Array.prototype.slice.call(forms)
