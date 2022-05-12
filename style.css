@@ -2,7 +2,6 @@
     font-size: 80%;
 }
 
-html {
-    position: relative;
-    min-height: 100%;
+.container {
+    margin-bottom: 1.5rem;
 }

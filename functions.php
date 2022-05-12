@@ -30,7 +30,7 @@ function partition(array $arr, int $p): array
 function head(string $title = 'Úvod'): void
 { ?>
     <!DOCTYPE html>
-    <html lang="sk">
+    <html lang="sk" class="h-100">
     <meta charset="UTF-8">
     <title><?= $title . " - Fiktívny Parlament"; ?></title>
     <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -38,7 +38,7 @@ function head(string $title = 'Úvod'): void
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-<body>
+<body class="d-flex flex-column h-100">
 <header class="container-fluid bg-primary bg-gradient text-white">
     <h1>Fiktívny Parlament</h1>
     <h4 class="mb-0 pb-2"><?= $title; ?></h4>
