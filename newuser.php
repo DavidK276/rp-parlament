@@ -9,104 +9,51 @@ include('navbar.php'); ?>
 
 <?php
 if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
-    if (isset($_POST['submit'])) {
-//    $email = sanitise($_POST['email']);
-//    $role = $_POST['rola'];
-//    $title = sanitise($_POST['titul']);
-//    $whole_name = sanitise($_POST['cele_meno']);
-//    $first_name = explode(' ', $whole_name)[0];
-//    $last_name = explode(' ', $whole_name)[1];
-//    $address = sanitise($_POST['adresa']);
-//    $password = $_POST['heslo0'];
-//    $password_repeat = $_POST['heslo1'];
-//
-//    // kontrola vstupu
-//    if (empty($email)) $errors['email'] = "Musíte zadať email";
-//    else if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors['email'] = "Zadaný email má zlý formát";
-//    if (empty($role)) $errors['role'] = "Musíte zvoliť rolu";
-//    if (strlen($title) > 20) $errors['title'] = "Titul musí mať najviac 20 znakov";
-//    if (empty($first_name)) $errors['first_name'] = "Musíte zadať meno";
-//    else if (strlen($first_name) > 30) $errors['first_name'] = "Meno musí mať najviac 30 znakov";
-//    if (empty($last_name)) $errors['last_name'] = "Musíte zadať priezvisko";
-//    else if (strlen($last_name) > 30) $errors['last_name'] = "Priezvisko musí mať najviac 30 znakov";
-//    if (empty($address)) $errors['address'] = "Musíte zadať adresu";
-//    else if (strlen($address) > 50) $errors['address'] = "Adresa musí mať najviac 50 znakov";
-//    if (empty($password)) $errors['password'] = "Zadajte heslo";
-//    else if ($password != $password_repeat) $errors['password'] = "Heslá sa nezhodujú";
-//        $error = false;
-//        if (empty($_POST['email'])) $error = true;
-//        else if (!filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) $error = true;
-//        else if (empty($_POST['rola']) && ($_POST['rola'] != ROLE_ADMIN || $_POST['rola'] != ROLE_POSLANEC)) $error = true;
-//        else if (strlen($_POST['titul']) > 20) $error = true;
-//        else if (empty($_POST['cele_meno']) || strlen($_POST['cele_meno']) > 60 || !verify_name($_POST['cele_meno'])) $error = true;
-//        else if (empty($_POST['adresa']) || strlen($_POST['adresa']) > 100 || strlen($_POST['adresa']) < 6) $error = true;
-//        else if (empty($_POST['heslo0']) || $_POST['heslo0'] != $_POST['heslo1']) $error = true;
-//        if ($error) {
-//            http_response_code(400);
-//            display_error('Chybná požiadavka.');
-//        } else {
-        // ak je vstup platny, vlozit do databazy
+    if (isset($_POST['submit']) && isset($_POST['rola'])) {
         if ($_POST['rola'] == ROLE_POSLANEC) {
-//                $poslanec = array();
-//                $poslanec['email'] = sanitise(filter_var($_POST['email'], FILTER_SANITIZE_EMAIL));
-//                $poslanec['titul'] = sanitise($_POST['titul']);
-//                $whole_name = sanitise($_POST['cele_meno']);
-//                $poslanec['meno'] = explode(' ', $whole_name)[0];
-//                $poslanec['priezvisko'] = explode(' ', $whole_name)[1];
-//                $poslanec['adresa'] = sanitise($_POST['adresa']);
-//                $poslanec['heslo'] = $_POST['heslo0'];
-//                if (!isset($_POST['specializacia'])) $poslanec['specializacia'] = '';
-//                else $poslanec['specializacia'] = implode(',', $_POST['specializacia']);
-//                $result = insert_poslanec($mysqli, $poslanec);
             $poslanec = new Poslanec();
             $poslanec->udaje = new OsobneUdaje();
-            $poslanec->udaje->email = $_POST['email'];
-            $name = explode(' ', $_POST['cele_meno']);
-            $poslanec->udaje->meno = $name[0];
-            $poslanec->udaje->priezvisko = $name[1];
-            $poslanec->udaje->titul = $_POST['titul'];
-            $poslanec->udaje->adresa = $_POST['adresa'];
-            $poslanec->specializacia = $_POST['specializacia'];
+            $poslanec->udaje->email = $_POST['email'] ?? '';
+            $name = explode(' ', $_POST['cele_meno'] ?? '');
+            $poslanec->udaje->meno = $name[0] ?? '';
+            $poslanec->udaje->priezvisko = $name[1] ?? '';
+            $poslanec->udaje->titul = $_POST['titul'] ?? '';
+            $poslanec->udaje->adresa = $_POST['adresa'] ?? '';
+            $poslanec->specializacia = $_POST['specializacia'] ?? '';
             try {
-                $poslanec->insert($_POST['heslo0']);
+                $poslanec->insert($_POST['heslo0'] ?? '');
                 $result = SUCCESS;
             } catch (AttributeException) {
                 http_response_code(400);
                 display_error('Chybná požiadavka');
             } catch (UserExistsException) {
+                http_response_code(400);
                 $result = ERROR_USER_EXISTS;
             }
         } else if ($_POST['rola'] == ROLE_ADMIN) {
-//                $admin = array();
-//                $admin['email'] = sanitise($_POST['email']);
-//                $whole_name = sanitise($_POST['cele_meno']);
-//                $admin['meno'] = explode(' ', $whole_name)[0];
-//                $admin['priezvisko'] = explode(' ', $whole_name)[1];
-//                $admin['adresa'] = sanitise($_POST['adresa']);
-//                $admin['heslo'] = $_POST['heslo0'];
-//                $result = insert_admin($mysqli, $admin);
             $admin = new Admin();
             $admin->udaje = new OsobneUdaje();
-            $admin->udaje->email = $_POST['email'];
-            $name = explode(' ', $_POST['cele_meno']);
-            $admin->udaje->meno = $name[0];
-            $admin->udaje->priezvisko = $name[1];
-            $admin->udaje->titul = $_POST['titul'];
-            $admin->udaje->adresa = $_POST['adresa'];
+            $admin->udaje->email = $_POST['email'] ?? '';
+            $name = explode(' ', $_POST['cele_meno'] ?? '');
+            $admin->udaje->meno = $name[0] ?? '';
+            $admin->udaje->priezvisko = $name[1] ?? '';
+            $admin->udaje->titul = $_POST['titul'] ?? '';
+            $admin->udaje->adresa = $_POST['adresa'] ?? '';
             try {
-                $admin->insert($_POST['heslo0']);
+                $admin->insert($_POST['heslo0'] ?? '');
                 $result = SUCCESS;
             } catch (AttributeException) {
                 http_response_code(400);
                 display_error('Chybná požiadavka');
             } catch (UserExistsException) {
+                http_response_code(400);
                 $result = ERROR_USER_EXISTS;
             }
         }
     } ?>
     <div class="container">
         <div class="row">
-            <div class="col-md-4">
+            <div class="col-md-5">
                 <h2>Nový používateľ</h2>
                 <form method="post" class="needs-validation" id="form_add_user" novalidate>
                     <div class="my-3">
@@ -139,25 +86,25 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
                         </div>
                     </div>
                     <div class="mb-3" hidden>
-                        <label for="titul" class="form-label">Titul:
-                            <i class="material-icons" title="Tituly používateľa, napr. Mgr.">help</i>
-                        </label>
-                        <input type="text" class="form-control" id="titul" placeholder="Zadajte titul" name="titul"
-                               value="">
-                    </div>
-                    <div class="mb-3" hidden>
                         <label for="hidden_field" class="form-label">Špecializácia:
                             <i class="material-icons" title="Špecializácie používateľa">help</i>
                         </label>
                         <input type="hidden" id="hidden_field" value="">
                         <div class="form-check">
-                            <?php foreach (get_spec_values($mysqli) as $spec) {
+                            <?php foreach (get_spec_values($GLOBALS['mysqli']) as $spec) {
                                 $l = strtolower($spec);
                                 $l = explode(' ', $l)[0];
                                 echo "<input class=\"form-check-input\" type=\"checkbox\" value=\"$spec\" id=\"sp_$l\" name=\"specializacia[]\">
                                     <label class=\"form-check-label\" for=\"sp_$l\">$spec</label><br>";
                             } ?>
                         </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="titul" class="form-label">Titul:
+                            <i class="material-icons" title="Tituly používateľa, napr. Mgr.">help</i>
+                        </label>
+                        <input type="text" class="form-control" id="titul" placeholder="Zadajte titul" name="titul"
+                               value="">
                     </div>
                     <div class="mb-3">
                         <label for="meno_priezvisko" class="form-label"><b class="text-danger">*</b>&nbsp;Meno a
@@ -211,7 +158,7 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
             'use strict'
 
             // Fetch all the forms we want to apply custom Bootstrap validation styles to
-            var forms = document.querySelectorAll('.needs-validation');
+            const forms = document.querySelectorAll('.needs-validation');
 
             // Loop over them and prevent submission
             Array.prototype.slice.call(forms)
@@ -262,12 +209,10 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
                 });
 
             document.getElementById('rola_admin').addEventListener('click', function () {
-                document.getElementById('titul').parentElement.setAttribute('hidden', '');
                 document.getElementById('hidden_field').parentElement.setAttribute('hidden', '');
             });
 
             document.getElementById('rola_poslanec').addEventListener('click', function () {
-                document.getElementById('titul').parentElement.removeAttribute('hidden');
                 document.getElementById('hidden_field').parentElement.removeAttribute('hidden');
             });
         })();
