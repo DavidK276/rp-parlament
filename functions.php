@@ -56,55 +56,6 @@ function display_error(string $error_text): void
 }
 
 /**
- * queries the database to find if the user exists
- * @param mysqli $mysqli
- * @param string $email an email of the user to query
- * @return bool
- */
-function user_exists(mysqli $mysqli, string $email): bool
-{
-    if (!$mysqli->connect_errno) {
-        $email = filter_var($email, FILTER_SANITIZE_EMAIL);
-        $stmt = $mysqli->prepare('SELECT id FROM osobne_udaje WHERE email=?');
-        $stmt->bind_param('s', $email);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        if ($result->num_rows > 0) {
-            $result->free();
-            return true;
-        }
-        $result->free();
-    }
-    return false;
-}
-
-/**
- * sanitises the user input
- * @param string $input
- * @return string
- */
-function sanitise(string $input): string
-{
-    return trim(strip_tags($input));
-}
-
-/* kontroluje meno (meno a priezvisko)
-vráti TRUE, ak celé meno ($input) obsahuje práve 1 medzeru, pred a za medzerou sú časti aspoň dĺžky 3 znaky
-*/
-/**
- * checks the validity of the name input by the user
- * @param string $input
- * @return bool true if input contains exactly one space and at least three characters before and after the space
- */
-function verify_name(string $input): bool
-{
-    $space = strpos($input, ' ');
-    if (!$space) return false;
-    $last_name = substr($input, $space + 1);
-    return ($space > 2 && (!str_contains($last_name, ' ')) && strlen($last_name) > 2);
-}
-
-/**
  * retrieves all possible values of 'specializacia' from the database
  * @param mysqli $mysqli
  * @return string[]
@@ -143,7 +94,6 @@ function get_all_admini(mysqli $mysqli): array
     }
     return [];
 }
-
 
 function exception_handler(Throwable $exception): void {
     display_error('Nastala neznáma chyba.');
