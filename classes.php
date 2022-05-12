@@ -13,6 +13,10 @@ class BezpecnostnaPrevierka
     public bool $platnost = true;
     public static mysqli $mysqli;
 
+    /**
+     * @param int $id
+     * @throws UserNotFoundException
+     */
     public function __construct(public int $id=0) {
         if ($id > 0) $this->select();
         $type = self::$mysqli->query("SHOW COLUMNS FROM bezp_previerka WHERE Field = 'uroven'")->fetch_assoc()['Type'];
@@ -24,6 +28,10 @@ class BezpecnostnaPrevierka
         return !self::$mysqli->connect_errno;
     }
 
+    /**
+     * @return void
+     * @throws UserNotFoundException
+     */
     public function select(): void {
         if ($this->check_database()){
             $stmt = self::$mysqli->prepare("SELECT uroven, kto_udelil, datum, platnost FROM bezp_previerka WHERE id=?");
@@ -43,6 +51,10 @@ class BezpecnostnaPrevierka
         else throw new Exception("Unknown error");
     }
 
+    /**
+     * @return void
+     * @throws AttributeException
+     */
     public function insert(): void {
         if ($this->kto_udelil == 0) throw new AttributeException("kto_udelil must be set");
         if (!in_array($this->uroven, $this->vsetky_urovne)) throw new AttributeException("Invalid uroven");
@@ -55,6 +67,10 @@ class BezpecnostnaPrevierka
         else throw new Exception("Unknown error");
     }
 
+    /**
+     * @return void
+     * @throws AttributeException
+     */
     public function update_platnost(): void {
         if ($this->id == 0) throw new AttributeException("id must be set");
         if ($this->check_database()) {
@@ -65,6 +81,10 @@ class BezpecnostnaPrevierka
         else throw new Exception("Unknown error");
     }
 
+    /**
+     * @return void
+     * @throws AttributeException
+     */
     public function update_uroven(): void {
         if ($this->id == 0) throw new AttributeException("id must be set");
         if ($this->kto_udelil == 0) throw new AttributeException("kto_udelil must be set");
@@ -80,7 +100,6 @@ class BezpecnostnaPrevierka
 
 class OsobneUdaje
 {
-    // todo: funckia na filtrovanie udajov
     public ?int $id_previerka = null;
     public string $email = '';
     public string $titul = '';
@@ -89,6 +108,11 @@ class OsobneUdaje
     public string $adresa = '';
     public static mysqli $mysqli;
 
+    /**
+     * @param int $id
+     * @throws AttributeException
+     * @throws UserNotFoundException
+     */
     public function __construct(public int $id=0) {
         if ($id > 0) $this->select();
     }
@@ -97,6 +121,10 @@ class OsobneUdaje
         return !self::$mysqli->connect_errno;
     }
 
+    /**
+     * @return void
+     * @throws AttributeException
+     */
     private function check_attributes(): void {
         if (!filter_var($this->email, FILTER_VALIDATE_EMAIL)) throw new AttributeException("Email must be valid");
         if (strlen($this->email) > 50) throw new AttributeException("Email was too long.");
@@ -105,6 +133,10 @@ class OsobneUdaje
         if (strlen($this->adresa) < 6 || strlen($this->adresa) > 100) throw new AttributeException("Address must be valid");
     }
 
+    /**
+     * @param string $str
+     * @return string
+     */
     private function sanitize(string $str): string {
         return trim(strip_tags($str));
     }
@@ -117,8 +149,14 @@ class OsobneUdaje
         $this->adresa = $this->sanitize($this->adresa);
     }
 
+    /**
+     * @return void
+     * @throws AttributeException
+     * @throws UserExistsException
+     */
     public function insert(): void {
         $this->sanitize_attributes();
+        if ($this->email_exists()) throw new UserExistsException('This email is already in use!');
         $this->check_attributes();
         if ($this->check_database()) {
             $stmt = self::$mysqli->prepare('INSERT INTO osobne_udaje(email, meno, priezvisko, adresa, titul) VALUES(?, ?, ?, ?, ?)');
@@ -129,6 +167,11 @@ class OsobneUdaje
         else throw new Exception("Unknown error");
     }
 
+    /**
+     * @return void
+     * @throws AttributeException
+     * @throws UserNotFoundException
+     */
     public function select(): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
         if ($this->check_database()) {
@@ -151,6 +194,11 @@ class OsobneUdaje
         else throw new Exception("Unknown error");
     }
 
+    /**
+     * @param string $email
+     * @return void
+     * @throws UserNotFoundException
+     */
     public function select_by_email(string $email): void {
         if ($this->check_database()) {
             $stmt = self::$mysqli->prepare('SELECT * FROM osobne_udaje WHERE osobne_udaje.email=?');
@@ -172,6 +220,9 @@ class OsobneUdaje
         else throw new Exception("Unknown error");
     }
 
+    /**
+     * @return bool
+     */
     private function email_exists(): bool {
         if ($this->check_database()) {
             $stmt = self::$mysqli->prepare('SELECT id FROM osobne_udaje WHERE email=?');
@@ -187,6 +238,12 @@ class OsobneUdaje
         return false;
     }
 
+    /**
+     * @return void
+     * @throws AttributeException
+     * @throws UserExistsException
+     * @throws UserNotFoundException
+     */
     public function update(): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
         $this->sanitize_attributes();
@@ -197,11 +254,17 @@ class OsobneUdaje
             $stmt = self::$mysqli->prepare("UPDATE osobne_udaje SET email=?,meno=?,priezvisko=?,adresa=?,titul=?,id_previerka=? WHERE osobne_udaje.id=?");
             $stmt->bind_param('sssssii', $this->email, $this->meno, $this->priezvisko, $this->adresa, $this->titul, $this->id_previerka, $this->id);
             $stmt->execute();
+            /** @noinspection PhpNonStrictObjectEqualityInspection */
             if ($stmt->affected_rows != 1 && $this != $old_udaje) throw new UserNotFoundException('User with the specified id does not exist!');
         }
         else throw new Exception("Unknown error");
     }
 
+    /**
+     * @return void
+     * @throws AttributeException
+     * @throws UserNotFoundException
+     */
     public function delete(): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
         if ($this->check_database()){
@@ -222,6 +285,8 @@ class Admin
     public static mysqli $mysqli;
 
     /**
+     * @param int $id
+     * @throws AttributeException
      * @throws UserNotFoundException
      */
     public function __construct(public int $id=0) {
@@ -232,11 +297,17 @@ class Admin
         return !self::$mysqli->connect_errno;
     }
 
+    /**
+     * @return void
+     * @throws AttributeException
+     */
     private function check_attributes(): void {
         if ($this->udaje == null) throw new AttributeException("udaje must be initialized");
     }
 
     /**
+     * @return void
+     * @throws AttributeException
      * @throws UserNotFoundException
      */
     public function select(): void {
@@ -258,6 +329,12 @@ class Admin
         else throw new Exception("Unknown error");
     }
 
+    /**
+     * @param string $heslo
+     * @return void
+     * @throws AttributeException
+     * @throws UserExistsException
+     */
     public function insert(string $heslo): void {
         $this->check_attributes();
         if ($this->check_database()) {
@@ -272,6 +349,11 @@ class Admin
         else throw new Exception("Unknown error");
     }
 
+    /**
+     * @param string $heslo
+     * @return void
+     * @throws AttributeException
+     */
     public function update_heslo(string $heslo): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
         $stmt = self::$mysqli->prepare("UPDATE admin SET heslo=? WHERE id=?");
@@ -280,6 +362,12 @@ class Admin
         $stmt->execute();
     }
 
+    /**
+     * @param string $email
+     * @param string $heslo
+     * @return bool
+     * @throws AttributeException
+     */
     public function login(string $email, string $heslo): bool {
         try {
             $udaje = new OsobneUdaje();
@@ -306,6 +394,11 @@ class Admin
         return false;
     }
 
+    /**
+     * @return int
+     * @throws AttributeException
+     * @throws UserNotFoundException
+     */
     public function delete(): int {
         if ($this->id == null) throw new AttributeException("id must be initialized");
         if ($this->check_database()) {
@@ -330,6 +423,8 @@ class Poslanec
     public static mysqli $mysqli;
 
     /**
+     * @param int $id
+     * @throws AttributeException
      * @throws UserNotFoundException
      */
     public function __construct(public int $id=0) {
@@ -343,6 +438,10 @@ class Poslanec
         return !self::$mysqli->connect_errno;
     }
 
+    /**
+     * @return void
+     * @throws AttributeException
+     */
     private function check_attributes(): void {
         if ($this->udaje == null) throw new AttributeException("udaje must be initialized");
         foreach ($this->specializacia as $sp) {
@@ -351,6 +450,8 @@ class Poslanec
     }
 
     /**
+     * @return void
+     * @throws AttributeException
      * @throws UserNotFoundException
      */
     public function select(): void {
@@ -374,6 +475,12 @@ class Poslanec
         else throw new Exception("Unknown error");
     }
 
+    /**
+     * @param string $heslo
+     * @return void
+     * @throws AttributeException
+     * @throws UserExistsException
+     */
     public function insert(string $heslo): void {
         $this->check_attributes();
         if ($this->check_database()) {
@@ -389,6 +496,12 @@ class Poslanec
         else throw new Exception("Unknown error");
     }
 
+    /**
+     * @return void
+     * @throws AttributeException
+     * @throws UserExistsException
+     * @throws UserNotFoundException
+     */
     public function update(): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
         $this->check_attributes();
@@ -414,6 +527,11 @@ class Poslanec
         $stmt->execute();
     }
 
+    /**
+     * @param string $heslo
+     * @return void
+     * @throws AttributeException
+     */
     public function update_heslo(string $heslo): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
         $stmt = self::$mysqli->prepare("UPDATE poslanec SET heslo=? WHERE id=?");
@@ -422,6 +540,12 @@ class Poslanec
         $stmt->execute();
     }
 
+    /**
+     * @param string $email
+     * @param string $heslo
+     * @return bool
+     * @throws AttributeException
+     */
     public function login(string $email, string $heslo): bool {
         try {
             $udaje = new OsobneUdaje();
@@ -448,6 +572,11 @@ class Poslanec
         return false;
     }
 
+    /**
+     * @return void
+     * @throws AttributeException
+     * @throws UserNotFoundException
+     */
     public function delete(): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
         if ($this->check_database()) {
