@@ -8,7 +8,44 @@ include('navbar.php');
 include('database.php');
 
 if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
-    if (isset($_POST['submit']) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
+    if (isset($_POST['toggle_bp']) && isset($_GET['admin_id'])) {
+        try {
+            $admin = new Admin($_GET['admin_id']);
+            if ($admin->udaje->id_previerka != null) {
+                $bezp_prev = new BezpecnostnaPrevierka($admin->udaje->id_previerka);
+                $bezp_prev->update_platnost();
+            }
+        } catch (AttributeException|UserNotFoundException) {
+            http_response_code(400);
+            display_error('Chybná požiadavka');
+        }
+    } else if (isset($_POST['submit_bp']) && isset($_GET['admin_id'])) {
+        $admin = new Admin($_GET['admin_id']);
+        if ($admin->udaje->id_previerka != null) {
+            try {
+                $bezp_prev = new BezpecnostnaPrevierka($admin->udaje->id_previerka);
+                $bezp_prev->uroven = $_POST['uroven'];
+                $bezp_prev->kto_udelil = $_SESSION[SESSION_USER]->id;
+                $bezp_prev->update_uroven();
+            } catch (AttributeException) {
+                http_response_code(400);
+                display_error('Chybná požiadavka');
+            }
+        } else {
+            try {
+                $bezp_prev = new BezpecnostnaPrevierka();
+                $bezp_prev->uroven = $_POST['uroven'];
+                $bezp_prev->kto_udelil = $_SESSION[SESSION_USER]->id;
+                $bezp_prev->insert();
+                $admin->udaje->id_previerka = $bezp_prev->id;
+                $admin->udaje->update();
+            } catch (AttributeException) {
+                http_response_code(400);
+                display_error('Chybná požiadavka');
+            }
+        }
+    }
+    if (isset($_POST['submit'])) {
         try {
             $admin = new Admin($_POST['admin_id']);
             $admin->udaje->email = $_POST['email'];
@@ -26,19 +63,16 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
             $result = ERROR_USER_EXISTS;
         }
     }
-    if (isset($_POST['delete'])){
+    if (isset($_POST['delete'])) {
         $admin = new Admin($_POST['delete_id']);
         try {
             $admin->delete();
-        }
-        catch (UserNotFoundException) {
+        } catch (UserNotFoundException) {
             display_error('Zadaný admin neexistuje.');
-        }
-        finally {
+        } finally {
             header('location:admins.php');
         }
-    }
-    else if (isset($_GET['admin_id'])) {
+    } else if (isset($_GET['admin_id'])) {
         try {
             $admin = new Admin($_GET['admin_id']);
             if ($admin->udaje->id_previerka != null) $bezp_prev = new BezpecnostnaPrevierka($admin->udaje->id_previerka); ?>
@@ -86,6 +120,9 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
                         <button type="button" class="btn btn-primary" data-bs-toggle="collapse"
                                 data-bs-target="#form_edit">Upraviť
                         </button>
+                        <button type="button" class="btn btn-primary" data-bs-toggle="collapse"
+                                data-bs-target="#form_previerka">Spravovať BP
+                        </button>
                         <form method="post" class="d-inline">
                             <input type="hidden" name="delete_id" value="<?= $_GET['admin_id'] ?>">
                             <button type="submit" class="btn btn-danger" name="delete">Vymazať</button>
@@ -126,7 +163,8 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
                                     </label>
                                     <input type="text" class="form-control" id="meno_priezvisko"
                                            placeholder="Zadajte meno a priezvisko" name="cele_meno"
-                                           value="<?= $admin->udaje->meno . ' ' . $admin->udaje->priezvisko ?>" required>
+                                           value="<?= $admin->udaje->meno . ' ' . $admin->udaje->priezvisko ?>"
+                                           required>
                                     <div class="invalid-feedback" id="meno_feedback"></div>
                                 </div>
                             </div>
@@ -145,9 +183,37 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
                         </form>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-md-8">
+                        <form method="post" class="needs-validation collapse" id="form_previerka" novalidate>
+                            <div class="my-3">
+                                <label for="uroven" class="form-label"><b class="text-danger">*</b>&nbsp;Úroveň:
+                                    <i class="material-icons" title="Určuje úroveň BP">help</i>
+                                </label>
+                                <div id="uroven">
+                                    <?php
+                                    $previerka = $bezp_prev ?? new BezpecnostnaPrevierka();
+                                    foreach ($previerka->vsetky_urovne as $ur) { ?>
+                                        <input type="radio" name="uroven" id="uroven_admin" value="<?= $ur ?>" required
+                                               aria-selected="true" <?php if ($ur == $previerka->uroven) echo 'checked' ?>>
+                                        <label for="uroven_admin"><?= $ur ?></label>
+                                    <?php } ?>
+                                    <div class="invalid-feedback">Vyberte úroveň</div>
+                                </div>
+                            </div>
+                            <button type="submit" name="submit_bp"
+                                    class="btn btn-primary"><?= ($previerka->id > 0) ? 'Upraviť' : 'Udeliť' ?></button>
+                            <?php if ($previerka->id > 0) { ?>
+                                <button type="submit" name="toggle_bp"
+                                        class="btn <?= $previerka->platnost ? 'btn-danger' : 'btn-success'
+                                        ?>"><?= $previerka->platnost ? 'Zrušiť platnosť' : 'Obnoviť platnosť' ?></button>
+                            <?php } ?>
+                        </form>
+                    </div>
+                </div>
             </div>
         <?php } catch (UserNotFoundException) {
-            display_error('Zadaný poslanec sa nenašiel');
+            display_error('Zadaný admin sa nenašiel');
         }
     } else {
         $admini = get_all_admini($mysqli);

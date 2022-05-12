@@ -7,7 +7,7 @@ class AttributeException extends Exception {}
 class BezpecnostnaPrevierka
 {
     public string $uroven = '';
-    private array $vsetky_urovne;
+    public readonly array $vsetky_urovne;
     public int $kto_udelil = 0;
     public string $datum = '';
     public bool $platnost = true;
@@ -39,6 +39,40 @@ class BezpecnostnaPrevierka
                 $this->datum = $row['datum'];
                 $this->platnost = $row['platnost'];
             } else throw new UserNotFoundException('Previerka with the specified id does not exist!');
+        }
+        else throw new Exception("Unknown error");
+    }
+
+    public function insert(): void {
+        if ($this->kto_udelil == 0) throw new AttributeException("kto_udelil must be set");
+        if (!in_array($this->uroven, $this->vsetky_urovne)) throw new AttributeException("Invalid uroven");
+        if ($this->check_database()) {
+            $stmt = self::$mysqli->prepare("INSERT INTO bezp_previerka(uroven, kto_udelil) VALUES(?, ?)");
+            $stmt->bind_param('si', $this->uroven, $this->kto_udelil);
+            $stmt->execute();
+            if (!$stmt->errno) $this->id = $stmt->insert_id;
+        }
+        else throw new Exception("Unknown error");
+    }
+
+    public function update_platnost(): void {
+        if ($this->id == 0) throw new AttributeException("id must be set");
+        if ($this->check_database()) {
+            $stmt = self::$mysqli->prepare("UPDATE bezp_previerka SET platnost=platnost^1 WHERE id=?");
+            $stmt->bind_param('i', $this->id);
+            $stmt->execute();
+        }
+        else throw new Exception("Unknown error");
+    }
+
+    public function update_uroven(): void {
+        if ($this->id == 0) throw new AttributeException("id must be set");
+        if ($this->kto_udelil == 0) throw new AttributeException("kto_udelil must be set");
+        if (!in_array($this->uroven, $this->vsetky_urovne)) throw new AttributeException("Invalid uroven");
+        if ($this->check_database()) {
+            $stmt = self::$mysqli->prepare("UPDATE bezp_previerka SET uroven=?, kto_udelil=? WHERE id=?");
+            $stmt->bind_param('sii', $this->uroven, $this->kto_udelil, $this->id);
+            $stmt->execute();
         }
         else throw new Exception("Unknown error");
     }
@@ -160,8 +194,8 @@ class OsobneUdaje
         if ($this->check_database()) {
             $old_udaje = new OsobneUdaje($this->id);
             if ($this->email_exists() && $old_udaje->email != $this->email) throw new UserExistsException("The specified email already exists!");
-            $stmt = self::$mysqli->prepare("UPDATE osobne_udaje SET email=?,meno=?,priezvisko=?,adresa=?,titul=? WHERE osobne_udaje.id=?");
-            $stmt->bind_param('sssssi', $this->email, $this->meno, $this->priezvisko, $this->adresa, $this->titul, $this->id);
+            $stmt = self::$mysqli->prepare("UPDATE osobne_udaje SET email=?,meno=?,priezvisko=?,adresa=?,titul=?,id_previerka=? WHERE osobne_udaje.id=?");
+            $stmt->bind_param('sssssii', $this->email, $this->meno, $this->priezvisko, $this->adresa, $this->titul, $this->id_previerka, $this->id);
             $stmt->execute();
             if ($stmt->affected_rows != 1 && $this != $old_udaje) throw new UserNotFoundException('User with the specified id does not exist!');
         }
