@@ -108,11 +108,13 @@ if (isset($_GET['poslanec_id'])) {
                             <h6>Adresa:</h6>
                             <div class="bg-secondary bg-opacity-25 container mb-4"><?= $poslanec->udaje->adresa ?></div>
                             <?php if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
-                                <h6>BP udelil:</h6>
+                                <h6>BP udelil, dátum:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4">
                                     <?php if (isset($bezp_prev)) {
                                         $udelil = new Admin($bezp_prev->kto_udelil);
                                         echo $udelil->udaje->meno . ' ' . $udelil->udaje->priezvisko;
+                                        $datum = new DateTimeImmutable($bezp_prev->datum);
+                                        echo ', ' . $datum->format('j.n.Y');
                                     } else echo '-'; ?></div>
                             <?php } ?>
                         </div>

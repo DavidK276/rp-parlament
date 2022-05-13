@@ -95,11 +95,13 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
                             <div class="col-md-4">
                                 <h6>Adresa:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4"><?= $admin->udaje->adresa ?></div>
-                                <h6>BP udelil:</h6>
+                                <h6>BP udelil, dátum:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4">
                                     <?php if (isset($bezp_prev)) {
                                         $udelil = new Admin($bezp_prev->kto_udelil);
                                         echo $udelil->udaje->meno . ' ' . $udelil->udaje->priezvisko;
+                                        $datum = new DateTimeImmutable($bezp_prev->datum);
+                                        echo ', ' . $datum->format('j.n.Y');
                                     } else echo '-'; ?></div>
                             </div>
                         </div>
