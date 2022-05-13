@@ -214,7 +214,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
                     <ul class="list-group">
                         <?php foreach ($admini[0] as $posl) { ?>
                             <a href="?admin_id=<?= $posl['id'] ?>"
-                               class="list-group-item"><?= join(' ', array_slice($posl, 1)) ?></a>
+                               class="list-group-item"><?= join(' ', array_slice($posl, 1, 3)) ?></a>
                         <?php } ?>
                     </ul>
                 </div>
@@ -222,7 +222,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
                     <ul class="list-group">
                         <?php foreach ($admini[1] as $posl) { ?>
                             <a href="?admin_id=<?= $posl['id'] ?>"
-                               class="list-group-item"><?= join(' ', array_slice($posl, 1)) ?></a>
+                               class="list-group-item"><?= join(' ', array_slice($posl, 1, 3)) ?></a>
                         <?php } ?>
                     </ul>
                 </div>
@@ -230,7 +230,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
                     <ul class="list-group">
                         <?php foreach ($admini[2] as $posl) { ?>
                             <a href="?admin_id=<?= $posl['id'] ?>"
-                               class="list-group-item"><?= join(' ', array_slice($posl, 1)) ?></a>
+                               class="list-group-item"><?= join(' ', array_slice($posl, 1, 3)) ?></a>
                         <?php } ?>
                     </ul>
                 </div>

@@ -75,10 +75,16 @@ function get_spec_values(mysqli $mysqli): array
 function get_all_poslanci(mysqli $mysqli): array
 {
     if (!$mysqli->connect_errno) {
-        $sql = "SELECT poslanec.id, titul, osobne_udaje.meno, priezvisko FROM osobne_udaje, poslanec WHERE poslanec.id_udaje=osobne_udaje.id";
+        $sql = "SELECT poslanec.id, titul, osobne_udaje.meno, priezvisko, id_previerka FROM osobne_udaje, poslanec WHERE poslanec.id_udaje=osobne_udaje.id";
         return $mysqli->query($sql)->fetch_all(MYSQLI_ASSOC);
     }
     return [];
+}
+
+function has_bp(array $user, string $uroven, bool $platnost): bool {
+    if (!isset($user['id_previerka'])) return false;
+    $previerka = new BezpecnostnaPrevierka($user['id_previerka']);
+    return $previerka->uroven == $uroven && $previerka->platnost != $platnost;
 }
 
 /**
@@ -89,7 +95,7 @@ function get_all_poslanci(mysqli $mysqli): array
 function get_all_admini(mysqli $mysqli): array
 {
     if (!$mysqli->connect_errno) {
-        $sql = "SELECT admin.id, titul, osobne_udaje.meno, priezvisko FROM osobne_udaje, admin WHERE admin.id_udaje=osobne_udaje.id";
+        $sql = "SELECT admin.id, titul, osobne_udaje.meno, priezvisko, id_previerka FROM osobne_udaje, admin WHERE admin.id_udaje=osobne_udaje.id";
         return $mysqli->query($sql)->fetch_all(MYSQLI_ASSOC);
     }
     return [];

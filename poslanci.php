@@ -38,8 +38,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
         } catch (AttributeException|UserExistsException) {
             http_response_code(400);
             display_error('Chybná požiadavka');
-        }
-        catch (UserNotFoundException) {
+        } catch (UserNotFoundException) {
             http_response_code(404);
             display_error('Zadaný poslanec neexistuje alebo už bol vymazaný.');
         }
@@ -99,7 +98,7 @@ if (isset($_GET['poslanec_id'])) {
                         <div class="col-md-4">
                             <h6>Titul:</h6>
                             <div class="bg-secondary bg-opacity-25 container mb-4"><?= $poslanec->udaje->titul ?: '-' ?></div>
-                            <?php if ($_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
+                            <?php if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
                                 <h6>Bezpečnostná previerka:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4"><?= ($bezp_prev->uroven ?? '-');
                                     if (isset($bezp_prev)) echo $bezp_prev->platnost ? ' (platná)' : ' (neplatná)'; ?></div>
@@ -108,7 +107,7 @@ if (isset($_GET['poslanec_id'])) {
                         <div class="col-md-4">
                             <h6>Adresa:</h6>
                             <div class="bg-secondary bg-opacity-25 container mb-4"><?= $poslanec->udaje->adresa ?></div>
-                            <?php if ($_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
+                            <?php if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
                                 <h6>BP udelil:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4">
                                     <?php if (isset($bezp_prev)) {
@@ -242,14 +241,40 @@ if (isset($_GET['poslanec_id'])) {
     }
 } else {
     $poslanci = get_all_poslanci($GLOBALS['mysqli']);
+    if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
+        if (isset($_GET['bp_select']) && $_GET['bp_select']) {
+            $poslanci = array_filter($poslanci, fn($x) => has_bp($x, $_GET['bp_select'], isset($_GET['bp_toggle'])));
+        }
+    }
     $poslanci = partition($poslanci, 3); ?>
     <div class="container">
+        <?php if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
+            <form method="get" id="form_filter">
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <select class="form-select" name="bp_select" aria-label="Vyberte úroveň">
+                            <option value="">Filtrovať podľa BP</option>
+                            <?php $previerka = new BezpecnostnaPrevierka();
+                            foreach ($previerka->vsetky_urovne as $ur) { ?>
+                                <option value='<?= $ur ?>' <?php if (isset($_GET['bp_select']) && $_GET['bp_select'] == $ur) echo 'selected' ?>><?= $ur ?></option>
+                            <?php } ?>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-check form-switch pt-2">
+                            <input class="form-check-input" type="checkbox" id="bp_toggle" name="bp_toggle" <?php if(isset($_GET['bp_toggle']) && $_GET['bp_toggle'] == 'on') echo 'checked' ?>>
+                            <label class="form-check-label" for="bp_toggle">platná/neplatná</label>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        <?php } if (empty($poslanci[0])) echo '<h5>Nie sú tu žiadni poslanci.</h5>'; ?>
         <div class="row">
             <div class="col-md-4">
                 <ul class="list-group">
                     <?php foreach ($poslanci[0] as $posl) { ?>
                         <a href="?poslanec_id=<?= $posl['id'] ?>"
-                           class="list-group-item"><?= join(' ', array_slice($posl, 1)) ?></a>
+                           class="list-group-item"><?= join(' ', array_slice($posl, 1, 3)) ?></a>
                     <?php } ?>
                 </ul>
             </div>
@@ -257,7 +282,7 @@ if (isset($_GET['poslanec_id'])) {
                 <ul class="list-group">
                     <?php foreach ($poslanci[1] as $posl) { ?>
                         <a href="?poslanec_id=<?= $posl['id'] ?>"
-                           class="list-group-item"><?= join(' ', array_slice($posl, 1)) ?></a>
+                           class="list-group-item"><?= join(' ', array_slice($posl, 1, 3)) ?></a>
                     <?php } ?>
                 </ul>
             </div>
@@ -265,13 +290,12 @@ if (isset($_GET['poslanec_id'])) {
                 <ul class="list-group">
                     <?php foreach ($poslanci[2] as $posl) { ?>
                         <a href="?poslanec_id=<?= $posl['id'] ?>"
-                           class="list-group-item"><?= join(' ', array_slice($posl, 1)) ?></a>
+                           class="list-group-item"><?= join(' ', array_slice($posl, 1, 3)) ?></a>
                     <?php } ?>
                 </ul>
             </div>
         </div>
     </div>
-
 <?php }
 include('footer.php'); ?>
 
@@ -319,6 +343,9 @@ include('footer.php'); ?>
                     form.classList.remove('was-validated');
                 });
             });
+        document.getElementById('form_filter').addEventListener('input', function () {
+            document.getElementById('form_filter').submit();
+        });
     })()
 
     function verify_name(name) {
