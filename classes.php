@@ -222,7 +222,7 @@ class OsobneUdaje
     }
 
     /**
-     * @return bool
+     * @return bool return true if the email is already in use
      */
     private function email_exists(): bool {
         if ($this->check_database()) {
@@ -548,6 +548,14 @@ class Poslanec
 }
 
 trait Login {
+    /**
+     * executes the provided mysqli_stmt and verifies the password in it
+     * @param mysqli_stmt $stmt
+     * @param string $email
+     * @param string $heslo
+     * @return bool
+     * @throws AttributeException
+     */
     private function do_login(mysqli_stmt $stmt, string $email, string $heslo): bool {
         try {
             $this->udaje->select_by_email($email);
