@@ -79,7 +79,10 @@ function set_user_attributes(Poslanec|Admin $user): void
     $user->udaje->priezvisko = $name[1] ?? '';
     $user->udaje->titul = $_POST['titul'] ?? '';
     $user->udaje->adresa = $_POST['adresa'] ?? '';
-    if ($user instanceof Poslanec) $user->specializacia = $_POST['specializacia'] ?? '';
+    if ($user instanceof Poslanec) {
+        $user->specializacia = $_POST['specializacia'] ?? '';
+        $user->klub->id = $_POST['klub'];
+    }
 
 }
 
@@ -92,7 +95,7 @@ function set_user_attributes(Poslanec|Admin $user): void
 function get_all_poslanci(mysqli $mysqli, int $order_by): array
 {
     if (!$mysqli->connect_errno) {
-        $sql = "SELECT poslanec.id, titul, osobne_udaje.meno, priezvisko, id_previerka FROM osobne_udaje, poslanec WHERE poslanec.id_udaje=osobne_udaje.id";
+        $sql = "SELECT poslanec.id, titul, osobne_udaje.meno, priezvisko, id_previerka, id_klub FROM osobne_udaje, poslanec WHERE poslanec.id_udaje=osobne_udaje.id";
         if ($order_by == 1) $sql .= ' ORDER BY email;';
         else if ($order_by == 2) $sql .= ' ORDER BY meno';
         else if ($order_by == 3) $sql .= ' ORDER BY priezvisko;';
@@ -108,12 +111,17 @@ function get_all_poslanci(mysqli $mysqli, int $order_by): array
  * @param string $uroven
  * @param bool $platnost
  * @return bool
- * @throws UserNotFoundException
+ * @throws DataNotFoundException
  */
 function has_bp(array $user, string $uroven, bool $platnost): bool {
     if (!isset($user['id_previerka'])) return false;
     $previerka = new BezpecnostnaPrevierka($user['id_previerka']);
     return $previerka->uroven == $uroven && $previerka->platnost != $platnost;
+}
+
+function has_klub(array $poslanec, int $id_klub): bool {
+    if (!isset($poslanec['id_klub'])) return false;
+    return $poslanec['id_klub'] == $id_klub || $id_klub == 0;
 }
 
 /**
@@ -125,6 +133,15 @@ function get_all_admini(mysqli $mysqli): array
 {
     if (!$mysqli->connect_errno) {
         $sql = "SELECT admin.id, titul, osobne_udaje.meno, priezvisko, id_previerka FROM osobne_udaje, admin WHERE admin.id_udaje=osobne_udaje.id";
+        return $mysqli->query($sql)->fetch_all(MYSQLI_ASSOC);
+    }
+    return [];
+}
+
+function get_all_kluby(mysqli $mysqli): array
+{
+    if (!$mysqli->connect_errno) {
+        $sql = "SELECT id, nazov FROM poslanecky_klub";
         return $mysqli->query($sql)->fetch_all(MYSQLI_ASSOC);
     }
     return [];

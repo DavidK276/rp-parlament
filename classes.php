@@ -1,8 +1,56 @@
 <?php
 
 class UserExistsException extends Exception {}
-class UserNotFoundException extends Exception {}
+class DataNotFoundException extends Exception {}
 class AttributeException extends Exception {}
+
+class PoslaneckyKlub {
+    public static mysqli $mysqli;
+    public string $nazov;
+
+    public function __construct(public int $id=1) {
+        if ($id > 0) $this->select();
+    }
+
+    /**
+     * @param string $str
+     * @return string
+     */
+    private function sanitize(string $str): string {
+        return trim(strip_tags($str));
+    }
+
+    public function check_database(): bool {
+        return !self::$mysqli->connect_errno;
+    }
+
+    public function select(): void {
+        if ($this->check_database()) {
+            $stmt = self::$mysqli->prepare("SELECT id, nazov FROM poslanecky_klub WHERE id=?");
+            $stmt->bind_param('i', $this->id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stmt->close();
+            if ($result->num_rows > 0) {
+                $row = $result->fetch_assoc();
+                $result->free();
+                $this->nazov = $row['nazov'];
+            } else throw new DataNotFoundException('Klub with the specified id does not exist!');
+        }
+        else throw new Exception('unknown error');
+    }
+
+    public function insert(): void {
+        if ($this->check_database()) {
+            if (strlen($this->nazov) > 50 || !$this->nazov) throw new AttributeException('Nazov too long, max 50 chars.');
+            $this->nazov = $this->sanitize($this->nazov);
+            $stmt = self::$mysqli->prepare("INSERT INTO poslanecky_klub(nazov) VALUES(?)");
+            $stmt->bind_param('s', $this->nazov);
+            $stmt->execute();
+            if (!$stmt->errno) $this->id = $stmt->insert_id;
+        }
+    }
+}
 
 class BezpecnostnaPrevierka
 {
@@ -15,7 +63,7 @@ class BezpecnostnaPrevierka
 
     /**
      * @param int $id
-     * @throws UserNotFoundException
+     * @throws DataNotFoundException
      */
     public function __construct(public int $id=0) {
         if ($id > 0) $this->select();
@@ -30,7 +78,7 @@ class BezpecnostnaPrevierka
 
     /**
      * @return void
-     * @throws UserNotFoundException
+     * @throws DataNotFoundException
      */
     public function select(): void {
         if ($this->check_database()){
@@ -46,7 +94,7 @@ class BezpecnostnaPrevierka
                 $this->kto_udelil = $row['kto_udelil'];
                 $this->datum = $row['datum'];
                 $this->platnost = $row['platnost'];
-            } else throw new UserNotFoundException('Previerka with the specified id does not exist!');
+            } else throw new DataNotFoundException('Previerka with the specified id does not exist!');
         }
         else throw new Exception("Unknown error");
     }
@@ -111,7 +159,7 @@ class OsobneUdaje
     /**
      * @param int $id
      * @throws AttributeException
-     * @throws UserNotFoundException
+     * @throws DataNotFoundException
      */
     public function __construct(public int $id=0) {
         if ($id > 0) $this->select();
@@ -170,7 +218,7 @@ class OsobneUdaje
     /**
      * @return void
      * @throws AttributeException
-     * @throws UserNotFoundException
+     * @throws DataNotFoundException
      */
     public function select(): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
@@ -189,7 +237,7 @@ class OsobneUdaje
                 $this->meno = $row['meno'];
                 $this->priezvisko = $row['priezvisko'];
                 $this->adresa = $row['adresa'];
-            } else throw new UserNotFoundException('User with the specified id does not exist!');
+            } else throw new DataNotFoundException('User with the specified id does not exist!');
         }
         else throw new Exception("Unknown error");
     }
@@ -197,7 +245,7 @@ class OsobneUdaje
     /**
      * @param string $email
      * @return void
-     * @throws UserNotFoundException
+     * @throws DataNotFoundException
      */
     public function select_by_email(string $email): void {
         if ($this->check_database()) {
@@ -216,7 +264,7 @@ class OsobneUdaje
                 $this->priezvisko = $row['priezvisko'];
                 $this->adresa = $row['adresa'];
                 $this->id_previerka = $row['id_previerka'];
-            } else throw new UserNotFoundException('User with the specified email does not exist!');
+            } else throw new DataNotFoundException('User with the specified email does not exist!');
         }
         else throw new Exception("Unknown error");
     }
@@ -243,7 +291,7 @@ class OsobneUdaje
      * @return void
      * @throws AttributeException
      * @throws UserExistsException
-     * @throws UserNotFoundException
+     * @throws DataNotFoundException
      */
     public function update(): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
@@ -256,7 +304,7 @@ class OsobneUdaje
             $stmt->bind_param('sssssii', $this->email, $this->meno, $this->priezvisko, $this->adresa, $this->titul, $this->id_previerka, $this->id);
             $stmt->execute();
             /** @noinspection PhpNonStrictObjectEqualityInspection */
-            if ($stmt->affected_rows != 1 && $this != $old_udaje) throw new UserNotFoundException('User with the specified id does not exist!');
+            if ($stmt->affected_rows != 1 && $this != $old_udaje) throw new DataNotFoundException('User with the specified id does not exist!');
         }
         else throw new Exception("Unknown error");
     }
@@ -264,7 +312,7 @@ class OsobneUdaje
     /**
      * @return void
      * @throws AttributeException
-     * @throws UserNotFoundException
+     * @throws DataNotFoundException
      */
     public function delete(): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
@@ -273,7 +321,7 @@ class OsobneUdaje
             $stmt->bind_param('i', $this->id);
             $stmt->execute();
             if ($stmt->affected_rows > 1) throw new Exception("nieco je velmi zle!!");
-            else if ($stmt->affected_rows == 0) throw new UserNotFoundException('User with the specified id does not exist!');
+            else if ($stmt->affected_rows == 0) throw new DataNotFoundException('User with the specified id does not exist!');
         }
         else throw new Exception("Unknown error");
     }
@@ -289,7 +337,7 @@ class Admin
     /**
      * @param int $id
      * @throws AttributeException
-     * @throws UserNotFoundException
+     * @throws DataNotFoundException
      */
     public function __construct(public int $id=0) {
         if ($id > 0) $this->select();
@@ -311,7 +359,7 @@ class Admin
     /**
      * @return void
      * @throws AttributeException
-     * @throws UserNotFoundException
+     * @throws DataNotFoundException
      */
     public function select(): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
@@ -327,7 +375,7 @@ class Admin
                 $this->id_udaje = $row['id_udaje'];
                 if (!isset($this->udaje)) $this->udaje = new OsobneUdaje($this->id_udaje);
             }
-            else throw new UserNotFoundException('User with the specified id does not exist!');
+            else throw new DataNotFoundException('User with the specified id does not exist!');
         }
         else throw new Exception("Unknown error");
     }
@@ -375,7 +423,7 @@ class Admin
     /**
      * @return int
      * @throws AttributeException
-     * @throws UserNotFoundException
+     * @throws DataNotFoundException
      */
     public function delete(): int {
         if ($this->id == null) throw new AttributeException("id must be initialized");
@@ -384,7 +432,7 @@ class Admin
             $stmt->bind_param('i', $this->id);
             $stmt->execute();
             if ($stmt->affected_rows > 1) throw new Exception("nieco je velmi zle!!");
-            else if ($stmt->affected_rows == 0) throw new UserNotFoundException('User with the specified id does not exist!');
+            else if ($stmt->affected_rows == 0) throw new DataNotFoundException('User with the specified id does not exist!');
             $this->udaje->delete();
         }
         throw new Exception("Unknown error");
@@ -394,7 +442,7 @@ class Admin
 class Poslanec
 {
     public int $id_udaje = 0;
-    public int $id_klub = 1;
+    public readonly PoslaneckyKlub $klub;
     public array $specializacia = array();
     private array $vsetky_specializacie;
     public readonly OsobneUdaje $udaje;
@@ -404,7 +452,7 @@ class Poslanec
     /**
      * @param int $id
      * @throws AttributeException
-     * @throws UserNotFoundException
+     * @throws DataNotFoundException
      */
     public function __construct(public int $id=0) {
         if ($id > 0) $this->select();
@@ -432,7 +480,7 @@ class Poslanec
     /**
      * @return void
      * @throws AttributeException
-     * @throws UserNotFoundException
+     * @throws DataNotFoundException
      */
     public function select(): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
@@ -446,11 +494,11 @@ class Poslanec
                 $row = $result->fetch_assoc();
                 $result->free();
                 $this->id_udaje = $row['id_udaje'];
-                $this->id_klub = $row['id_klub'];
                 $this->specializacia = explode(',', $row['specializacia']);
                 if (!isset($this->udaje)) $this->udaje = new OsobneUdaje($this->id_udaje);
+                if (!isset($this->klub)) $this->klub = new PoslaneckyKlub($row['id_klub']);
             }
-            else throw new UserNotFoundException('User with the specified id does not exist!');
+            else throw new DataNotFoundException('User with the specified id does not exist!');
         }
         else throw new Exception("Unknown error");
     }
@@ -467,10 +515,10 @@ class Poslanec
         if ($this->check_database()) {
             $this->udaje->insert();
             $udaje_id = $this->udaje->id;
-            $stmt = self::$mysqli->prepare("INSERT INTO poslanec(id_udaje, id_klub, specializacia, heslo) VALUES(?, ?, ?, ?)");
+            $stmt = self::$mysqli->prepare("INSERT INTO poslanec(id_udaje, specializacia, heslo) VALUES(?, ?, ?)");
             $password_hash = password_hash($heslo, PASSWORD_DEFAULT);
             $spec_str = implode(',', $this->specializacia);
-            $stmt->bind_param('iiss', $udaje_id, $this->id_klub, $spec_str, $password_hash);
+            $stmt->bind_param('iss', $udaje_id,  $spec_str, $password_hash);
             $stmt->execute();
             if (!$stmt->errno) $this->id = $stmt->insert_id;
         }
@@ -481,7 +529,7 @@ class Poslanec
      * @return void
      * @throws AttributeException
      * @throws UserExistsException
-     * @throws UserNotFoundException
+     * @throws DataNotFoundException
      */
     public function update(): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
@@ -490,7 +538,7 @@ class Poslanec
             $this->udaje->update();
             $old_poslanec = new Poslanec($this->id);
             if ($old_poslanec->specializacia != $this->specializacia) $this->update_specializacia();
-            if ($old_poslanec->id_klub != $this->id_klub) $this->update_klub();
+            if ($old_poslanec->klub != $this->klub) $this->update_klub();
         }
         else throw new Exception("Unknown error");
     }
@@ -503,8 +551,12 @@ class Poslanec
     }
 
     private function update_klub(): void {
+        $result =  self::$mysqli->query("SELECT id FROM poslanecky_klub")->fetch_all();
+        $kluby = array();
+        foreach ($result as $row) $kluby[] = $row[0];
+        if (!in_array($this->klub->id, $kluby)) throw new AttributeException('Invalid klub id');
         $stmt = self::$mysqli->prepare("UPDATE poslanec SET id_klub=? WHERE id=?");
-        $stmt->bind_param('si', $this->id_klub, $this->id);
+        $stmt->bind_param('si', $this->klub->id, $this->id);
         $stmt->execute();
     }
 
@@ -531,7 +583,7 @@ class Poslanec
     /**
      * @return void
      * @throws AttributeException
-     * @throws UserNotFoundException
+     * @throws DataNotFoundException
      */
     public function delete(): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
@@ -540,7 +592,7 @@ class Poslanec
             $stmt->bind_param('i', $this->id);
             $stmt->execute();
             if ($stmt->affected_rows > 1) throw new Exception("nieco je velmi zle!!");
-            else if ($stmt->affected_rows == 0) throw new UserNotFoundException('User with the specified id does not exist!');
+            else if ($stmt->affected_rows == 0) throw new DataNotFoundException('User with the specified id does not exist!');
             $this->udaje->delete();
         }
         else throw new Exception("Unknown error");
@@ -574,7 +626,7 @@ trait Login {
                 }
             }
         }
-        catch (UserNotFoundException) {
+        catch (DataNotFoundException) {
             return false;
         }
         return false;

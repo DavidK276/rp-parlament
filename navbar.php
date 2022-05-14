@@ -23,11 +23,11 @@
                                tabindex="-1"
                                aria-disabled="true">Admini</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link <?php if ($page == "klub.php") echo 'active' ?>" href="klub.php">Kluby</a>
+                        </li>
                     <?php } ?>
                 <?php } ?>
-<!--                <li class="nav-item">-->
-<!--                    <a class="nav-link --><?php //if ($page == "schodze.php") echo 'active' ?><!--" href="#">Schôdze</a>-->
-<!--                </li>-->
                 <li class="nav-item">
                     <a class="nav-link <?php if ($page == "konto.php") echo 'active' ?>" href="konto.php" tabindex="-1"
                        aria-disabled="true"><?php echo isset($_SESSION[SESSION_USER]) ? 'Konto' : 'Prihlásenie' ?></a>

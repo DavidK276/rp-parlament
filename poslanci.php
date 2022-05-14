@@ -15,7 +15,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
                 $bezp_prev = new BezpecnostnaPrevierka($poslanec->udaje->id_previerka);
                 $bezp_prev->update_platnost();
             }
-        } catch (AttributeException|UserNotFoundException) {
+        } catch (AttributeException|DataNotFoundException) {
             http_response_code(400);
             display_error('Chybná požiadavka');
         }
@@ -38,7 +38,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
         } catch (AttributeException|UserExistsException) {
             http_response_code(400);
             display_error('Chybná požiadavka');
-        } catch (UserNotFoundException) {
+        } catch (DataNotFoundException) {
             http_response_code(404);
             display_error('Zadaný poslanec neexistuje alebo už bol vymazaný.');
         }
@@ -46,7 +46,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
         try {
             $poslanec = new Poslanec($_POST['delete_id'] ?? 0);
             $poslanec->delete();
-        } catch (UserNotFoundException) {
+        } catch (DataNotFoundException) {
             http_response_code(404);
             display_error('Zadaný poslanec neexistuje alebo už bol vymazaný.');
         } catch (AttributeException) {
@@ -61,7 +61,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
             set_user_attributes($poslanec);
             $poslanec->update();
             $result = SUCCESS;
-        } catch (AttributeException|UserNotFoundException|TypeError) {
+        } catch (AttributeException|DataNotFoundException|TypeError) {
             http_response_code(400);
             display_error('Chybná požiadavka');
         } catch (UserExistsException) {
@@ -97,7 +97,7 @@ if (isset($_GET['poslanec_id'])) {
                             <?php if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
                                 <h6>Bezpečnostná previerka</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4"><?= $bezp_prev->uroven ?? '-' ?></div>
-                                <h6>Platnosť BP</h6>
+                                <h6>Platnosť BP:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4"><?php
                                     if (isset($bezp_prev)) echo $bezp_prev->platnost ? 'Platná' : 'Neplatná'; else echo '-' ?></div>
                             <?php } ?>
@@ -106,13 +106,13 @@ if (isset($_GET['poslanec_id'])) {
                             <h6>Adresa:</h6>
                             <div class="bg-secondary bg-opacity-25 container mb-4"><?= $poslanec->udaje->adresa ?></div>
                             <?php if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
-                                <h6>BP udelil</h6>
+                                <h6>BP udelil:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4">
                                     <?php if (isset($bezp_prev)) {
                                         $udelil = new Admin($bezp_prev->kto_udelil);
                                         echo $udelil->udaje->meno . ' ' . $udelil->udaje->priezvisko;
                                     } else echo '-'; ?></div>
-                                <h6>Dátum udelenia</h6>
+                                <h6>Dátum udelenia:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4">
                                     <?php if (isset($bezp_prev)) {
                                         $datum = new DateTimeImmutable($bezp_prev->datum);
@@ -157,20 +157,38 @@ if (isset($_GET['poslanec_id'])) {
                                        name="email" required value="<?= $poslanec->udaje->email ?>">
                                 <div class="invalid-feedback">Zadajte platný email</div>
                             </div>
-                            <div class="mb-3">
-                                <label for="hidden_field" class="form-label">Špecializácia:
-                                    <i class="material-icons" title="Špecializácie používateľa">help</i>
-                                </label>
-                                <input type="hidden" id="hidden_field" value="">
-                                <div class="form-check">
-                                    <?php foreach (get_spec_values($GLOBALS['mysqli']) as $spec) {
-                                        $l = strtolower($spec);
-                                        $l = explode(' ', $l)[0]; ?>
-                                        <input class="form-check-input" type="checkbox" value="<?= $spec ?>"
-                                               id="sp_<?= $l ?>"
-                                               name="specializacia[]" <?php if (in_array($spec, $poslanec->specializacia)) echo ' checked' ?>>
-                                        <label class="form-check-label" for="sp_<?= $l ?>"><?= $spec ?></label><br>
-                                    <?php } ?>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="hidden_field" class="form-label">Špecializácia:
+                                        <i class="material-icons" title="Špecializácie používateľa">help</i>
+                                    </label>
+                                    <input type="hidden" id="hidden_field" value="">
+                                    <div class="form-check">
+                                        <?php foreach (get_spec_values($GLOBALS['mysqli']) as $spec) {
+                                            $l = strtolower($spec);
+                                            $l = explode(' ', $l)[0]; ?>
+                                            <input class="form-check-input" type="checkbox" value="<?= $spec ?>"
+                                                   id="sp_<?= $l ?>"
+                                                   name="specializacia[]" <?php if (in_array($spec, $poslanec->specializacia)) echo ' checked' ?>>
+                                            <label class="form-check-label" for="sp_<?= $l ?>"><?= $spec ?></label><br>
+                                        <?php } ?>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="klub" class="form-label">Klub:
+                                        <i class="material-icons" title="Určuje príslušnosť poslanca ku klubu">help</i>
+                                    </label>
+                                    <div id="klub">
+                                        <?php
+                                        $kluby = get_all_kluby($GLOBALS['mysqli']);
+                                        foreach ($kluby as $klub) { ?>
+                                            <input type="radio" name="klub" id="klub_<?= $klub['id'] ?>" value="<?= $klub['id'] ?>"
+                                                   required
+                                                   aria-selected="true" <?php if ($poslanec->klub->id == $klub['id']) echo 'checked' ?>>
+                                            <label for="klub_<?= $klub['id'] ?>"><?= $klub['nazov'] ?></label><br>
+                                        <?php } ?>
+                                        <div class="invalid-feedback">Vyberte klub</div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="row mb-3">
@@ -240,75 +258,92 @@ if (isset($_GET['poslanec_id'])) {
                 </div>
             <?php } ?>
         </div>
-    <?php } catch (UserNotFoundException) {
+    <?php } catch (DataNotFoundException) {
         http_response_code(404);
         display_error('Zadaný poslanec sa nenašiel');
     }
-} else {
-    $poslanci = get_all_poslanci($GLOBALS['mysqli'], $_GET['order_by'] ?? 0);
-    if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
-        if (isset($_GET['bp_select']) && $_GET['bp_select']) {
-            $poslanci = array_filter($poslanci, fn($x) => has_bp($x, $_GET['bp_select'], isset($_GET['bp_toggle'])));
-        }
-    }
-    $poslanci = partition($poslanci, 3); ?>
+} else { ?>
     <div class="container">
-        <?php if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
-            <form method="get" id="form_filter">
-                <div class="row mb-4">
-                    <div class="col-md-3">
-                        <select class="form-select" name="order_by" aria-label="Zoradiť podľa">
-                            <option value="">Zoradiť podľa</option>
-                            <option value="1">Email</option>
-                            <option value="2">Meno</option>
-                            <option value="3">Priezvisko</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <select class="form-select" name="bp_select" aria-label="Vyberte úroveň">
-                            <option value="">Filtrovať podľa BP</option>
-                            <?php $previerka = new BezpecnostnaPrevierka();
-                            foreach ($previerka->vsetky_urovne as $ur) { ?>
-                                <option value='<?= $ur ?>' <?php if (isset($_GET['bp_select']) && $_GET['bp_select'] == $ur) echo 'selected' ?>><?= $ur ?></option>
-                            <?php } ?>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-check form-switch pt-2">
-                            <input class="form-check-input" type="checkbox" id="bp_toggle" name="bp_toggle" <?php if(isset($_GET['bp_toggle']) && $_GET['bp_toggle'] == 'on') echo 'checked' ?>>
-                            <label class="form-check-label" for="bp_toggle">platná/neplatná</label>
-                        </div>
+        <form method="get" id="form_filter">
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <select class="form-select" name="order_by" aria-label="Zoradiť podľa">
+                        <option value="0">Zoradiť podľa</option>
+                        <option value="1" <?php if (isset($_GET['order_by']) && $_GET['order_by'] == 1) echo 'selected' ?>>
+                            Email
+                        </option>
+                        <option value="2" <?php if (isset($_GET['order_by']) && $_GET['order_by'] == 2) echo 'selected' ?>>
+                            Meno
+                        </option>
+                        <option value="3" <?php if (isset($_GET['order_by']) && $_GET['order_by'] == 3) echo 'selected' ?>>
+                            Priezvisko
+                        </option>
+                        <option value="4" <?php if (isset($_GET['order_by']) && $_GET['order_by'] == 4) echo 'selected' ?>>
+                            Poslanecký klub
+                        </option>
+                    </select>
+                </div>
+                <?php if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
+                <div class="col-md-3">
+                    <select class="form-select" name="bp_select" aria-label="Vyberte úroveň">
+                        <option value="">Filtrovať podľa BP</option>
+                        <?php $previerka = new BezpecnostnaPrevierka();
+                        foreach ($previerka->vsetky_urovne as $ur) { ?>
+                            <option value='<?= $ur ?>' <?php if (isset($_GET['bp_select']) && $_GET['bp_select'] == $ur) echo 'selected' ?>><?= $ur ?></option>
+                        <?php } ?>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-check form-switch pt-2">
+                        <input class="form-check-input" type="checkbox" id="bp_toggle"
+                               name="bp_toggle" <?php if (isset($_GET['bp_toggle']) && $_GET['bp_toggle'] == 'on') echo 'checked' ?>>
+                        <label class="form-check-label" for="bp_toggle">platná/neplatná</label>
                     </div>
                 </div>
-            </form>
-        <?php } if (empty($poslanci[0])) echo '<h5>Nie sú tu žiadni poslanci.</h5>'; ?>
-        <div class="row">
-            <div class="col-md-4">
-                <ul class="list-group">
-                    <?php foreach ($poslanci[0] as $posl) { ?>
-                        <a href="?poslanec_id=<?= $posl['id'] ?>"
-                           class="list-group-item"><?= join(' ', array_slice($posl, 1, 3)) ?></a>
-                    <?php } ?>
-                </ul>
             </div>
-            <div class="col-md-4">
-                <ul class="list-group">
-                    <?php foreach ($poslanci[1] as $posl) { ?>
-                        <a href="?poslanec_id=<?= $posl['id'] ?>"
-                           class="list-group-item"><?= join(' ', array_slice($posl, 1, 3)) ?></a>
-                    <?php } ?>
-                </ul>
+        </form>
+        <?php }
+        $kluby = isset($_GET['order_by']) && $_GET['order_by'] == 4 ? get_all_kluby($GLOBALS['mysqli']) : [0];
+        foreach ($kluby as $klub) {
+            $poslanci = get_all_poslanci($GLOBALS['mysqli'], (int)$_GET['order_by'] ?? 0);
+            if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
+                if (isset($_GET['bp_select']) && $_GET['bp_select']) {
+                    $poslanci = array_filter($poslanci, fn($x) => has_bp($x, $_GET['bp_select'], isset($_GET['bp_toggle'])));
+                }
+            }
+            if ($klub) {
+                $poslanci = array_filter($poslanci, fn($x) => has_klub($x, $klub['id']));
+                echo "<h5>{$klub['nazov']}</h5>";
+            }
+            if (empty($poslanci)) echo '<h5>Nie sú tu žiadni poslanci.</h5>';
+            $poslanci = partition($poslanci, 3); ?>
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <ul class="list-group">
+                        <?php foreach ($poslanci[0] as $posl) { ?>
+                            <a href="?poslanec_id=<?= $posl['id'] ?>"
+                               class="list-group-item"><?= join(' ', array_slice($posl, 1, 3)) ?></a>
+                        <?php } ?>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <ul class="list-group">
+                        <?php foreach ($poslanci[1] as $posl) { ?>
+                            <a href="?poslanec_id=<?= $posl['id'] ?>"
+                               class="list-group-item"><?= join(' ', array_slice($posl, 1, 3)) ?></a>
+                        <?php } ?>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <ul class="list-group">
+                        <?php foreach ($poslanci[2] as $posl) { ?>
+                            <a href="?poslanec_id=<?= $posl['id'] ?>"
+                               class="list-group-item"><?= join(' ', array_slice($posl, 1, 3)) ?></a>
+                        <?php } ?>
+                    </ul>
+                </div>
             </div>
-            <div class="col-md-4">
-                <ul class="list-group">
-                    <?php foreach ($poslanci[2] as $posl) { ?>
-                        <a href="?poslanec_id=<?= $posl['id'] ?>"
-                           class="list-group-item"><?= join(' ', array_slice($posl, 1, 3)) ?></a>
-                    <?php } ?>
-                </ul>
-            </div>
-        </div>
-    </div>
+        <?php } ?> </div>
 <?php }
 include('footer.php'); ?>
 

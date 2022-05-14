@@ -10,5 +10,6 @@ else {
     Poslanec::$mysqli = $mysqli;
     OsobneUdaje::$mysqli = $mysqli;
     BezpecnostnaPrevierka::$mysqli = $mysqli;
+    PoslaneckyKlub::$mysqli = $mysqli;
 }
 

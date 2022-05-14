@@ -31,7 +31,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
                 $admin->udaje->update();
             }
         }
-    } catch (UserNotFoundException) {
+    } catch (DataNotFoundException) {
         http_response_code(404);
         display_error('Zadaný admin neexistuje.');
     } catch (AttributeException|UserExistsException) {
@@ -44,7 +44,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
             set_user_attributes($admin);
             $admin->udaje->update();
             $result = SUCCESS;
-        } catch (AttributeException|UserNotFoundException) {
+        } catch (AttributeException|DataNotFoundException) {
             http_response_code(400);
             display_error('Chybná požiadavka');
         } catch (UserExistsException) {
@@ -55,7 +55,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
         try {
             $admin = new Admin($_POST['delete_id']);
             $admin->delete();
-        } catch (UserNotFoundException) {
+        } catch (DataNotFoundException) {
             http_response_code(404);
             display_error('Zadaný admin neexistuje.');
         } finally {
@@ -86,20 +86,20 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
                                 <h6>Bezpečnostná previerka:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4"><?= ($bezp_prev->uroven ?? '-');
                                     if (isset($bezp_prev)) echo $bezp_prev->platnost ? ' (platná)' : ' (neplatná)'; ?></div>
-                                <h6>Platnosť BP</h6>
+                                <h6>Platnosť BP:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4"><?php
                                     if (isset($bezp_prev)) echo $bezp_prev->platnost ? 'Platná' : 'Neplatná'; else echo '-' ?></div>
                             </div>
                             <div class="col-md-4">
                                 <h6>Adresa:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4"><?= $admin->udaje->adresa ?></div>
-                                <h6>BP udelil</h6>
+                                <h6>BP udelil:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4">
                                     <?php if (isset($bezp_prev)) {
                                         $udelil = new Admin($bezp_prev->kto_udelil);
                                         echo $udelil->udaje->meno . ' ' . $udelil->udaje->priezvisko;
                                     } else echo '-'; ?></div>
-                                <h6>Dátum udelenia</h6>
+                                <h6>Dátum udelenia:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4">
                                     <?php if (isset($bezp_prev)) {
                                         $datum = new DateTimeImmutable($bezp_prev->datum);
@@ -208,7 +208,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
                     </div>
                 </div>
             </div>
-        <?php } catch (UserNotFoundException) {
+        <?php } catch (DataNotFoundException) {
             display_error('Zadaný admin sa nenašiel');
         }
     } else {
@@ -242,9 +242,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
                 </div>
             </div>
         </div>
-
-        <?php
-    }
+    <?php }
 } else {
     display_error('K tejto stránke nemáte prístup.');
 }
