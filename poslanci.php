@@ -300,10 +300,10 @@ if (isset($_GET['poslanec_id'])) {
                         <label class="form-check-label" for="bp_toggle">platná/neplatná</label>
                     </div>
                 </div>
+                <?php } ?>
             </div>
         </form>
-        <?php }
-        $kluby = isset($_GET['order_by']) && $_GET['order_by'] == 4 ? get_all_kluby($GLOBALS['mysqli']) : [0];
+        <?php $kluby = isset($_GET['order_by']) && $_GET['order_by'] == 4 ? get_all_kluby($GLOBALS['mysqli']) : [0];
         foreach ($kluby as $klub) {
             $poslanci = get_all_poslanci($GLOBALS['mysqli'], (int)($_GET['order_by'] ?? 0));
             if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
