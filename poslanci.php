@@ -2,10 +2,10 @@
 include('classes.php');
 session_start();
 include('constants.php');
+include('database.php');
 include('functions.php');
 head('Poslanci');
 include('navbar.php');
-include('database.php');
 
 if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
     if (isset($_POST['toggle_bp']) && isset($_GET['poslanec_id'])) {
@@ -59,7 +59,6 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
         try {
             $poslanec = new Poslanec($_POST['poslanec_id'] ?? 0);
             set_user_attributes($poslanec);
-            $poslanec->specializacia = $_POST['specializacia'] ?? '';
             $poslanec->update();
             $result = SUCCESS;
         } catch (AttributeException|UserNotFoundException|TypeError) {

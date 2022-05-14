@@ -2,8 +2,8 @@
 include('classes.php');
 session_start();
 include('constants.php');
-include('functions.php');
 include('database.php');
+include('functions.php');
 // overenie udajov treba robit skor ako sa spusti navbar, aby sa prihlasenie hned prejavilo
 if (isset($_POST['login'])) {
     $admin = new Admin();

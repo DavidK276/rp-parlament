@@ -1,9 +1,9 @@
 <?php
 include('classes.php');
 session_start();
+include('database.php');
 include('constants.php');
 include('functions.php');
-include('database.php');
 head('Pridať používateľa');
 include('navbar.php'); ?>
 
@@ -13,7 +13,6 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
         if ($_POST['rola'] == ROLE_POSLANEC) {
             $poslanec = new Poslanec();
             set_user_attributes($poslanec);
-            $poslanec->specializacia = $_POST['specializacia'] ?? '';
             try {
                 $poslanec->insert($_POST['heslo0'] ?? '');
                 $result = SUCCESS;

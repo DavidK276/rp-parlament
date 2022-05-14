@@ -46,7 +46,7 @@ function head(string $title = 'Úvod'): void
 <?php }
 
 /**
- * Displays an error message with the specified test to the user
+ * Displays an error message with the specified text to the user
  * @param string $error_text
  * @return void
  */
@@ -79,6 +79,8 @@ function set_user_attributes(Poslanec|Admin $user): void
     $user->udaje->priezvisko = $name[1] ?? '';
     $user->udaje->titul = $_POST['titul'] ?? '';
     $user->udaje->adresa = $_POST['adresa'] ?? '';
+    if ($user instanceof Poslanec) $user->specializacia = $_POST['specializacia'] ?? '';
+
 }
 
 /**
@@ -100,6 +102,14 @@ function get_all_poslanci(mysqli $mysqli, int $order_by): array
     return [];
 }
 
+/**
+ * checks a row from the database and return true if the user has BP of given criteria
+ * @param array $user
+ * @param string $uroven
+ * @param bool $platnost
+ * @return bool
+ * @throws UserNotFoundException
+ */
 function has_bp(array $user, string $uroven, bool $platnost): bool {
     if (!isset($user['id_previerka'])) return false;
     $previerka = new BezpecnostnaPrevierka($user['id_previerka']);

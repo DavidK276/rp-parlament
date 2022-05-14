@@ -2,10 +2,10 @@
 include('classes.php');
 session_start();
 include('constants.php');
+include('database.php');
 include('functions.php');
 head('Správa adminov');
 include('navbar.php');
-include('database.php');
 
 if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
     try {
