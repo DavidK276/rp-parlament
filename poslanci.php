@@ -158,7 +158,7 @@ if (isset($_GET['poslanec_id'])) {
                                 <div class="invalid-feedback">Zadajte platný email</div>
                             </div>
                             <div class="row mb-3">
-                                <div class="col-md-6">
+                                <div class="col-md-6 mb-2 mb-md-0">
                                     <label for="hidden_field" class="form-label">Špecializácia:
                                         <i class="material-icons" title="Špecializácie používateľa">help</i>
                                     </label>
@@ -191,8 +191,8 @@ if (isset($_GET['poslanec_id'])) {
                                     </div>
                                 </div>
                             </div>
-                            <div class="row mb-3">
-                                <div class="col-md-3">
+                            <div class="row">
+                                <div class="col-md-3 mb-2 mb-md-0">
                                     <label for="titul" class="form-label">Titul:
                                         <i class="material-icons" title="Tituly používateľa, napr. Mgr.">help</i>
                                     </label>
@@ -200,7 +200,7 @@ if (isset($_GET['poslanec_id'])) {
                                            name="titul"
                                            value="<?= $poslanec->udaje->titul ?>">
                                 </div>
-                                <div class="col-md-9">
+                                <div class="col-md-9 mb-2 mb-md-0">
                                     <label for="meno_priezvisko" class="form-label">Meno a priezvisko:
                                         <i class="material-icons"
                                            title="Musí obsahovať presne dve slová po aspoň 3 znaky a nesmie byť dlhšie ako 60 znakov">help</i>
@@ -267,7 +267,7 @@ if (isset($_GET['poslanec_id'])) {
         <form method="get" id="form_filter">
             <div class="row mb-4">
                 <div class="col-md-3">
-                    <select class="form-select" name="order_by" aria-label="Zoradiť podľa">
+                    <select class="form-select mb-2 mb-md-0" name="order_by" aria-label="Zoradiť podľa">
                         <option value="0">Zoradiť podľa</option>
                         <option value="1" <?php if (isset($_GET['order_by']) && $_GET['order_by'] == 1) echo 'selected' ?>>
                             Email
