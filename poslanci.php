@@ -305,7 +305,7 @@ if (isset($_GET['poslanec_id'])) {
         <?php }
         $kluby = isset($_GET['order_by']) && $_GET['order_by'] == 4 ? get_all_kluby($GLOBALS['mysqli']) : [0];
         foreach ($kluby as $klub) {
-            $poslanci = get_all_poslanci($GLOBALS['mysqli'], (int)$_GET['order_by'] ?? 0);
+            $poslanci = get_all_poslanci($GLOBALS['mysqli'], (int)($_GET['order_by'] ?? 0));
             if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
                 if (isset($_GET['bp_select']) && $_GET['bp_select']) {
                     $poslanci = array_filter($poslanci, fn($x) => has_bp($x, $_GET['bp_select'], isset($_GET['bp_toggle'])));

@@ -17,7 +17,7 @@
                 </li>
                 <?php
                 if (isset($_SESSION[SESSION_USER])) { ?>
-                    <?php if ($_SESSION[SESSION_USER] instanceof Admin) { ?>
+                    <?php if ($_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
                         <li class="nav-item">
                             <a class="nav-link <?php if ($page == "admins.php") echo 'active' ?>" href="admins.php"
                                tabindex="-1"
@@ -34,7 +34,7 @@
                 </li>
                 <?php
                 if (isset($_SESSION[SESSION_USER])) { ?>
-                    <?php if ($_SESSION[SESSION_USER] instanceof Admin) { ?>
+                    <?php if ($_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
                         <li class="nav-item">
                             <a class="nav-link <?php if ($page == "newuser.php") echo 'active' ?>" href="newuser.php"
                                tabindex="-1"
