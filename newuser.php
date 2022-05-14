@@ -12,13 +12,7 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
     if (isset($_POST['submit']) && isset($_POST['rola'])) {
         if ($_POST['rola'] == ROLE_POSLANEC) {
             $poslanec = new Poslanec();
-            $poslanec->udaje = new OsobneUdaje();
-            $poslanec->udaje->email = $_POST['email'] ?? '';
-            $name = explode(' ', $_POST['cele_meno'] ?? '');
-            $poslanec->udaje->meno = $name[0] ?? '';
-            $poslanec->udaje->priezvisko = $name[1] ?? '';
-            $poslanec->udaje->titul = $_POST['titul'] ?? '';
-            $poslanec->udaje->adresa = $_POST['adresa'] ?? '';
+            set_user_attributes($poslanec);
             $poslanec->specializacia = $_POST['specializacia'] ?? '';
             try {
                 $poslanec->insert($_POST['heslo0'] ?? '');
@@ -32,13 +26,13 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
             }
         } else if ($_POST['rola'] == ROLE_ADMIN) {
             $admin = new Admin();
-            $admin->udaje = new OsobneUdaje();
-            $admin->udaje->email = $_POST['email'] ?? '';
-            $name = explode(' ', $_POST['cele_meno'] ?? '');
-            $admin->udaje->meno = $name[0] ?? '';
-            $admin->udaje->priezvisko = $name[1] ?? '';
-            $admin->udaje->titul = $_POST['titul'] ?? '';
-            $admin->udaje->adresa = $_POST['adresa'] ?? '';
+//            $admin->udaje->email = $_POST['email'] ?? '';
+//            $name = explode(' ', $_POST['cele_meno'] ?? '');
+//            $admin->udaje->meno = $name[0] ?? '';
+//            $admin->udaje->priezvisko = $name[1] ?? '';
+//            $admin->udaje->titul = $_POST['titul'] ?? '';
+//            $admin->udaje->adresa = $_POST['adresa'] ?? '';
+            set_user_attributes($admin);
             try {
                 $admin->insert($_POST['heslo0'] ?? '');
                 $result = SUCCESS;

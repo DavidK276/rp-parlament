@@ -58,12 +58,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
     } else if (isset($_POST['submit'])) {
         try {
             $poslanec = new Poslanec($_POST['poslanec_id'] ?? 0);
-            $poslanec->udaje->email = $_POST['email'] ?? '';
-            $name = explode(' ', $_POST['cele_meno'] ?? '');
-            $poslanec->udaje->meno = $name[0] ?? '';
-            $poslanec->udaje->priezvisko = $name[1] ?? '';
-            $poslanec->udaje->titul = $_POST['titul'] ?? '';
-            $poslanec->udaje->adresa = $_POST['adresa'] ?? '';
+            set_user_attributes($poslanec);
             $poslanec->specializacia = $_POST['specializacia'] ?? '';
             $poslanec->update();
             $result = SUCCESS;
@@ -89,33 +84,42 @@ if (isset($_GET['poslanec_id'])) {
                     </div>
                     <div class="row">
                         <div class="col-md-4">
-                            <h6>Meno a priezvisko:</h6>
+                            <h6>Meno a priezvisko</h6>
                             <div class="bg-secondary bg-opacity-25 container mb-4">
                                 <?= $poslanec->udaje->meno . ' ' . $poslanec->udaje->priezvisko ?></div>
                             <h6>Email:</h6>
                             <div class="bg-secondary bg-opacity-25 container mb-4"><?= $poslanec->udaje->email ?></div>
+                            <h6>Špecializácia</h6>
+                            <div class="bg-secondary bg-opacity-25 container mb-4"><?= implode(', ', $poslanec->specializacia) ?: '-' ?></div>
                         </div>
                         <div class="col-md-4">
                             <h6>Titul:</h6>
                             <div class="bg-secondary bg-opacity-25 container mb-4"><?= $poslanec->udaje->titul ?: '-' ?></div>
                             <?php if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
-                                <h6>Bezpečnostná previerka:</h6>
-                                <div class="bg-secondary bg-opacity-25 container mb-4"><?= ($bezp_prev->uroven ?? '-');
-                                    if (isset($bezp_prev)) echo $bezp_prev->platnost ? ' (platná)' : ' (neplatná)'; ?></div>
+                                <h6>Bezpečnostná previerka</h6>
+                                <div class="bg-secondary bg-opacity-25 container mb-4"><?= $bezp_prev->uroven ?? '-' ?></div>
+                                <h6>Platnosť BP</h6>
+                                <div class="bg-secondary bg-opacity-25 container mb-4"><?php
+                                    if (isset($bezp_prev)) echo $bezp_prev->platnost ? 'Platná' : 'Neplatná'; else echo '-' ?></div>
                             <?php } ?>
                         </div>
                         <div class="col-md-4">
                             <h6>Adresa:</h6>
                             <div class="bg-secondary bg-opacity-25 container mb-4"><?= $poslanec->udaje->adresa ?></div>
                             <?php if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
-                                <h6>BP udelil, dátum:</h6>
+                                <h6>BP udelil</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4">
                                     <?php if (isset($bezp_prev)) {
                                         $udelil = new Admin($bezp_prev->kto_udelil);
                                         echo $udelil->udaje->meno . ' ' . $udelil->udaje->priezvisko;
-                                        $datum = new DateTimeImmutable($bezp_prev->datum);
-                                        echo ', ' . $datum->format('j.n.Y');
                                     } else echo '-'; ?></div>
+                                <h6>Dátum udelenia</h6>
+                                <div class="bg-secondary bg-opacity-25 container mb-4">
+                                    <?php if (isset($bezp_prev)) {
+                                        $datum = new DateTimeImmutable($bezp_prev->datum);
+                                        echo $datum->format('j. n. Y');
+                                    } else echo '-'; ?>
+                                </div>
                             <?php } ?>
                         </div>
                     </div>
@@ -242,7 +246,7 @@ if (isset($_GET['poslanec_id'])) {
         display_error('Zadaný poslanec sa nenašiel');
     }
 } else {
-    $poslanci = get_all_poslanci($GLOBALS['mysqli']);
+    $poslanci = get_all_poslanci($GLOBALS['mysqli'], $_GET['order_by'] ?? 0);
     if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) {
         if (isset($_GET['bp_select']) && $_GET['bp_select']) {
             $poslanci = array_filter($poslanci, fn($x) => has_bp($x, $_GET['bp_select'], isset($_GET['bp_toggle'])));
@@ -253,6 +257,14 @@ if (isset($_GET['poslanec_id'])) {
         <?php if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN) { ?>
             <form method="get" id="form_filter">
                 <div class="row mb-4">
+                    <div class="col-md-3">
+                        <select class="form-select" name="order_by" aria-label="Zoradiť podľa">
+                            <option value="">Zoradiť podľa</option>
+                            <option value="1">Email</option>
+                            <option value="2">Meno</option>
+                            <option value="3">Priezvisko</option>
+                        </select>
+                    </div>
                     <div class="col-md-3">
                         <select class="form-select" name="bp_select" aria-label="Vyberte úroveň">
                             <option value="">Filtrovať podľa BP</option>

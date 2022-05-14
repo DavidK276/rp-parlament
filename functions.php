@@ -68,14 +68,33 @@ function get_spec_values(mysqli $mysqli): array
 }
 
 /**
+ * @param Poslanec|Admin $user
+ * @return void
+ */
+function set_user_attributes(Poslanec|Admin $user): void
+{
+    $user->udaje->email = $_POST['email'] ?? '';
+    $name = explode(' ', $_POST['cele_meno'] ?? '');
+    $user->udaje->meno = $name[0] ?? '';
+    $user->udaje->priezvisko = $name[1] ?? '';
+    $user->udaje->titul = $_POST['titul'] ?? '';
+    $user->udaje->adresa = $_POST['adresa'] ?? '';
+}
+
+/**
  * retrieves all data from table 'poslancec' and 'osobne_udaje' for display to the user
  * @param mysqli $mysqli
+ * @param int $order_by
  * @return array[]
  */
-function get_all_poslanci(mysqli $mysqli): array
+function get_all_poslanci(mysqli $mysqli, int $order_by): array
 {
     if (!$mysqli->connect_errno) {
         $sql = "SELECT poslanec.id, titul, osobne_udaje.meno, priezvisko, id_previerka FROM osobne_udaje, poslanec WHERE poslanec.id_udaje=osobne_udaje.id";
+        if ($order_by == 1) $sql .= ' ORDER BY email;';
+        else if ($order_by == 2) $sql .= ' ORDER BY meno';
+        else if ($order_by == 3) $sql .= ' ORDER BY priezvisko;';
+        else $sql .= ' ORDER BY poslanec.id';
         return $mysqli->query($sql)->fetch_all(MYSQLI_ASSOC);
     }
     return [];

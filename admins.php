@@ -41,12 +41,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
     if (isset($_POST['submit'])) {
         try {
             $admin = new Admin($_POST['admin_id']);
-            $admin->udaje->email = $_POST['email'];
-            $name = explode(' ', $_POST['cele_meno']);
-            $admin->udaje->meno = $name[0];
-            $admin->udaje->priezvisko = $name[1];
-            $admin->udaje->titul = $_POST['titul'];
-            $admin->udaje->adresa = $_POST['adresa'];
+            set_user_attributes($admin);
             $admin->udaje->update();
             $result = SUCCESS;
         } catch (AttributeException|UserNotFoundException) {
@@ -91,18 +86,26 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
                                 <h6>Bezpečnostná previerka:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4"><?= ($bezp_prev->uroven ?? '-');
                                     if (isset($bezp_prev)) echo $bezp_prev->platnost ? ' (platná)' : ' (neplatná)'; ?></div>
+                                <h6>Platnosť BP</h6>
+                                <div class="bg-secondary bg-opacity-25 container mb-4"><?php
+                                    if (isset($bezp_prev)) echo $bezp_prev->platnost ? 'Platná' : 'Neplatná'; else echo '-' ?></div>
                             </div>
                             <div class="col-md-4">
                                 <h6>Adresa:</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4"><?= $admin->udaje->adresa ?></div>
-                                <h6>BP udelil, dátum:</h6>
+                                <h6>BP udelil</h6>
                                 <div class="bg-secondary bg-opacity-25 container mb-4">
                                     <?php if (isset($bezp_prev)) {
                                         $udelil = new Admin($bezp_prev->kto_udelil);
                                         echo $udelil->udaje->meno . ' ' . $udelil->udaje->priezvisko;
-                                        $datum = new DateTimeImmutable($bezp_prev->datum);
-                                        echo ', ' . $datum->format('j.n.Y');
                                     } else echo '-'; ?></div>
+                                <h6>Dátum udelenia</h6>
+                                <div class="bg-secondary bg-opacity-25 container mb-4">
+                                    <?php if (isset($bezp_prev)) {
+                                        $datum = new DateTimeImmutable($bezp_prev->datum);
+                                        echo $datum->format('j. n. Y');
+                                    } else echo '-'; ?>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -117,7 +120,8 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
                         </button>
                         <form method="post" class="d-inline">
                             <input type="hidden" name="delete_id" value="<?= $_GET['admin_id'] ?>">
-                            <button type="submit" class="btn btn-danger" name="delete">Vymazať</button>
+                            <button type="submit" class="btn btn-danger" name="delete" <?php
+                            if ($_SESSION[SESSION_USER]->id == $_GET['admin_id']) echo 'disabled'?>>Vymazať</button>
                         </form>
                         <?php if (isset($result)) {
                             if ($result == SUCCESS) echo '<p class="d-inline mx-2 text-success">Admin upravený</p>';

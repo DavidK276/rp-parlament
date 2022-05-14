@@ -215,6 +215,7 @@ class OsobneUdaje
                 $this->meno = $row['meno'];
                 $this->priezvisko = $row['priezvisko'];
                 $this->adresa = $row['adresa'];
+                $this->id_previerka = $row['id_previerka'];
             } else throw new UserNotFoundException('User with the specified email does not exist!');
         }
         else throw new Exception("Unknown error");
@@ -281,8 +282,9 @@ class OsobneUdaje
 class Admin
 {
     public int $id_udaje = 0;
-    public ?OsobneUdaje $udaje = null;
+    public readonly OsobneUdaje $udaje;
     public static mysqli $mysqli;
+    use Login;
 
     /**
      * @param int $id
@@ -291,6 +293,7 @@ class Admin
      */
     public function __construct(public int $id=0) {
         if ($id > 0) $this->select();
+        else $this->udaje = new OsobneUdaje();
     }
 
     private function check_database(): bool {
@@ -302,7 +305,7 @@ class Admin
      * @throws AttributeException
      */
     private function check_attributes(): void {
-        if ($this->udaje == null) throw new AttributeException("udaje must be initialized");
+        if (!isset($this->udaje)) throw new AttributeException("udaje must be initialized");
     }
 
     /**
@@ -322,7 +325,7 @@ class Admin
                 $row = $result->fetch_assoc();
                 $result->free();
                 $this->id_udaje = $row['id_udaje'];
-                $this->udaje = new OsobneUdaje($this->id_udaje);
+                if (!isset($this->udaje)) $this->udaje = new OsobneUdaje($this->id_udaje);
             }
             else throw new UserNotFoundException('User with the specified id does not exist!');
         }
@@ -353,6 +356,8 @@ class Admin
      * @param string $heslo
      * @return void
      * @throws AttributeException
+     * @noinspection PhpUnused
+     * @noinspection PhpUnused
      */
     public function update_heslo(string $heslo): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
@@ -362,36 +367,8 @@ class Admin
         $stmt->execute();
     }
 
-    /**
-     * @param string $email
-     * @param string $heslo
-     * @return bool
-     * @throws AttributeException
-     */
     public function login(string $email, string $heslo): bool {
-        try {
-            $udaje = new OsobneUdaje();
-            $udaje->select_by_email($email);
-            $stmt = self::$mysqli->prepare("SELECT heslo, id FROM admin WHERE admin.id_udaje=?");
-            $stmt->bind_param('i', $udaje->id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $stmt->close();
-            if ($result->num_rows != 1) return false;
-            else {
-                $row = $result->fetch_assoc();
-                $result->free();
-                if (password_verify($heslo, $row['heslo'])) {
-                    $this->id = $row['id'];
-                    $this->select();
-                    return true;
-                }
-            }
-        }
-        catch (UserNotFoundException) {
-            return false;
-        }
-        return false;
+        return $this->do_login(self::$mysqli->prepare("SELECT heslo, id FROM admin WHERE admin.id_udaje=?"), $email, $heslo);
     }
 
     /**
@@ -419,8 +396,9 @@ class Poslanec
     public int $id_klub = 1;
     public array $specializacia = array();
     private array $vsetky_specializacie;
-    public ?OsobneUdaje $udaje = null;
+    public readonly OsobneUdaje $udaje;
     public static mysqli $mysqli;
+    use Login;
 
     /**
      * @param int $id
@@ -429,6 +407,7 @@ class Poslanec
      */
     public function __construct(public int $id=0) {
         if ($id > 0) $this->select();
+        else $this->udaje = new OsobneUdaje();
         $type = self::$mysqli->query("SHOW COLUMNS FROM poslanec WHERE Field = 'specializacia'")->fetch_assoc()['Type'];
         preg_match("/^set\('(.*)'\)$/", $type, $matches);
         $this->vsetky_specializacie =  explode("','", $matches[1]);
@@ -443,7 +422,7 @@ class Poslanec
      * @throws AttributeException
      */
     private function check_attributes(): void {
-        if ($this->udaje == null) throw new AttributeException("udaje must be initialized");
+        if (!isset($this->udaje)) throw new AttributeException("udaje must be initialized");
         foreach ($this->specializacia as $sp) {
             if (!in_array($sp, $this->vsetky_specializacie)) throw new AttributeException("Invalid specializacia");
         }
@@ -468,7 +447,7 @@ class Poslanec
                 $this->id_udaje = $row['id_udaje'];
                 $this->id_klub = $row['id_klub'];
                 $this->specializacia = explode(',', $row['specializacia']);
-                $this->udaje = new OsobneUdaje($this->id_udaje);
+                if (!isset($this->udaje)) $this->udaje = new OsobneUdaje($this->id_udaje);
             }
             else throw new UserNotFoundException('User with the specified id does not exist!');
         }
@@ -531,6 +510,8 @@ class Poslanec
      * @param string $heslo
      * @return void
      * @throws AttributeException
+     * @noinspection PhpUnused
+     * @noinspection PhpUnused
      */
     public function update_heslo(string $heslo): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
@@ -540,36 +521,8 @@ class Poslanec
         $stmt->execute();
     }
 
-    /**
-     * @param string $email
-     * @param string $heslo
-     * @return bool
-     * @throws AttributeException
-     */
     public function login(string $email, string $heslo): bool {
-        try {
-            $udaje = new OsobneUdaje();
-            $udaje->select_by_email($email);
-            $stmt = self::$mysqli->prepare("SELECT heslo, id FROM poslanec WHERE poslanec.id_udaje=?");
-            $stmt->bind_param('i', $udaje->id);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            $stmt->close();
-            if ($result->num_rows != 1) return false;
-            else {
-                $row = $result->fetch_assoc();
-                $result->free();
-                if (password_verify($heslo, $row['heslo'])) {
-                    $this->id = $row['id'];
-                    $this->select();
-                    return true;
-                }
-            }
-        }
-        catch (UserNotFoundException) {
-            return false;
-        }
-        return false;
+        return $this->do_login(self::$mysqli->prepare("SELECT heslo, id FROM poslanec WHERE poslanec.id_udaje=?"), $email, $heslo);
     }
 
     /**
@@ -588,5 +541,31 @@ class Poslanec
             $this->udaje->delete();
         }
         else throw new Exception("Unknown error");
+    }
+}
+
+trait Login {
+    private function do_login(mysqli_stmt $stmt, string $email, string $heslo): bool {
+        try {
+            $this->udaje->select_by_email($email);
+            $stmt->bind_param('i', $this->udaje->id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stmt->close();
+            if ($result->num_rows != 1) return false;
+            else {
+                $row = $result->fetch_assoc();
+                $result->free();
+                if (password_verify($heslo, $row['heslo'])) {
+                    $this->id = $row['id'];
+                    $this->select();
+                    return true;
+                }
+            }
+        }
+        catch (UserNotFoundException) {
+            return false;
+        }
+        return false;
     }
 }
