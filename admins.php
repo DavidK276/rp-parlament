@@ -69,7 +69,7 @@ if (isset($_SESSION[SESSION_USER_ROLE]) && $_SESSION[SESSION_USER_ROLE] == ROLE_
                 <div class="row">
                     <div class="col-md-12">
                         <div class="d-flex pb-4 align-items-center">
-                            <h2>Stránka admin</h2>
+                            <h2>Stránka admina</h2>
                             <a href="admins.php" class="px-3" style="text-decoration: none">&lt;&lt;&nbsp;naspäť</a>
                         </div>
                         <div class="row">

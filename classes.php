@@ -340,6 +340,7 @@ class Admin
      */
     public function insert(string $heslo): void {
         $this->check_attributes();
+        if (strlen($heslo) >= 72) throw new AttributeException('Password must be shorter than 72 characters');
         if ($this->check_database()) {
             $this->udaje->insert();
             $udaje_id = $this->udaje->id;
@@ -357,10 +358,10 @@ class Admin
      * @return void
      * @throws AttributeException
      * @noinspection PhpUnused
-     * @noinspection PhpUnused
      */
     public function update_heslo(string $heslo): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
+        if (strlen($heslo) >= 72) throw new AttributeException('Password must be shorter than 72 characters');
         $stmt = self::$mysqli->prepare("UPDATE admin SET heslo=? WHERE id=?");
         $password_hash = password_hash($heslo, PASSWORD_DEFAULT);
         $stmt->bind_param('si', $password_hash, $this->id);
@@ -462,6 +463,7 @@ class Poslanec
      */
     public function insert(string $heslo): void {
         $this->check_attributes();
+        if (strlen($heslo) >= 72) throw new AttributeException('Password must be shorter than 72 characters');
         if ($this->check_database()) {
             $this->udaje->insert();
             $udaje_id = $this->udaje->id;
@@ -515,6 +517,7 @@ class Poslanec
      */
     public function update_heslo(string $heslo): void {
         if ($this->id == null) throw new AttributeException("id must be initialized");
+        if (strlen($heslo) >= 72) throw new AttributeException('Password must be shorter than 72 characters');
         $stmt = self::$mysqli->prepare("UPDATE poslanec SET heslo=? WHERE id=?");
         $password_hash = password_hash($heslo, PASSWORD_DEFAULT);
         $stmt->bind_param('si', $password_hash, $this->id);

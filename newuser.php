@@ -26,12 +26,6 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
             }
         } else if ($_POST['rola'] == ROLE_ADMIN) {
             $admin = new Admin();
-//            $admin->udaje->email = $_POST['email'] ?? '';
-//            $name = explode(' ', $_POST['cele_meno'] ?? '');
-//            $admin->udaje->meno = $name[0] ?? '';
-//            $admin->udaje->priezvisko = $name[1] ?? '';
-//            $admin->udaje->titul = $_POST['titul'] ?? '';
-//            $admin->udaje->adresa = $_POST['adresa'] ?? '';
             set_user_attributes($admin);
             try {
                 $admin->insert($_POST['heslo0'] ?? '');
@@ -122,7 +116,7 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
                     </div>
                     <div class="mb-1">
                         <label for="pwd" class="form-label"><b class="text-danger">*</b>&nbsp;Heslo:
-                            <i class="material-icons" title="Heslá sa musia zhodovať">help</i>
+                            <i class="material-icons" title="Heslá sa musia zhodovať a musia byť kratšie ako 72 znakov">help</i>
                         </label>
                         <input type="password" class="form-control" id="pwd" placeholder="Vytvorte heslo" name="heslo0"
                                value="" required>
@@ -164,7 +158,13 @@ if (isset($_SESSION[SESSION_USER]) && $_SESSION[SESSION_USER_ROLE] == ROLE_ADMIN
                             pwd_rep_input.setCustomValidity('Heslá sa musia zhodovať');
                             pwd_input.setCustomValidity('Heslá sa musia zhodovať');
                             document.getElementById('pwd_feedback').innerHTML = 'Heslá sa musia zhodovať';
-                        } else {
+                        }
+                        else if (pwd_input.value.length >= 72) {
+                            pwd_rep_input.setCustomValidity('Heslo nesmie byť dlhšie ako 72 znakov');
+                            pwd_input.setCustomValidity('Heslo nesmie byť dlhšie ako 72 znakov');
+                            document.getElementById('pwd_feedback').innerHTML = 'Heslo nesmie byť dlhšie ako 72 znakov';
+                        }
+                        else {
                             pwd_rep_input.setCustomValidity('');
                             pwd_input.setCustomValidity('');
                             document.getElementById('pwd_feedback').innerHTML = 'Zadajte heslo';
