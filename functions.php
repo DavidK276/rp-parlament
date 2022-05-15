@@ -80,8 +80,11 @@ function set_user_attributes(Poslanec|Admin $user): void
     $user->udaje->titul = $_POST['titul'] ?? '';
     $user->udaje->adresa = $_POST['adresa'] ?? '';
     if ($user instanceof Poslanec) {
-        $user->specializacia = $_POST['specializacia'] ?? '';
-        $user->klub->id = $_POST['klub'];
+        $user->specializacia = $_POST['specializacia'] ?? array();
+        if (isset($_POST['klub'])) {
+            if (isset($user->klub)) $user->klub->id = $_POST['klub'];
+            else $user->klub = new PoslaneckyKlub($_POST['klub']);
+        }
     }
 
 }

@@ -38,18 +38,18 @@ if (!isset($_SESSION[SESSION_USER])) { ?>
                     <div class="mb-3 mt-3">
                         <label for="email" class="form-label">Email:</label>
                         <input type="email" class="form-control" id="email" placeholder="Zadajte email" name="email"
-                               value="test@example.com">
+                               value="<?php if (DEBUG) echo 'test@example.com'?>">
                     </div>
                     <div class="mb-3">
                         <label for="pwd" class="form-label">Heslo:</label>
                         <input type="password" class="form-control" id="pwd" placeholder="Zadajte heslo" name="pswd"
-                               value="heslo123">
+                               value="<?php if (DEBUG) echo 'heslo123' ?>">
                     </div>
-                    <div class="form-check mb-3">
-                        <label class="form-check-label">
-                            <input class="form-check-input" type="checkbox" name="remember"> Zapamätať prihlásenie
-                        </label>
-                    </div>
+<!--                    <div class="form-check mb-3">-->
+<!--                        <label class="form-check-label">-->
+<!--                            <input class="form-check-input" type="checkbox" name="remember"> Zapamätať prihlásenie-->
+<!--                        </label>-->
+<!--                    </div>-->
                     <button type="submit" name="login" class="btn btn-primary">Prihlásiť</button>
                 </form>
             </div>

@@ -442,7 +442,7 @@ class Admin
 class Poslanec
 {
     public int $id_udaje = 0;
-    public readonly PoslaneckyKlub $klub;
+    public PoslaneckyKlub $klub;
     public array $specializacia = array();
     private array $vsetky_specializacie;
     public readonly OsobneUdaje $udaje;
@@ -473,7 +473,7 @@ class Poslanec
     private function check_attributes(): void {
         if (!isset($this->udaje)) throw new AttributeException("udaje must be initialized");
         foreach ($this->specializacia as $sp) {
-            if (!in_array($sp, $this->vsetky_specializacie)) throw new AttributeException("Invalid specializacia");
+            if (!in_array($sp, $this->vsetky_specializacie) && $sp) throw new AttributeException("Invalid specializacia");
         }
     }
 
