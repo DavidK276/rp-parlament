@@ -34,16 +34,16 @@ if (!isset($_SESSION[SESSION_USER])) { ?>
             <div class="col-md-4">
                 <h2>Prihlásenie do parlamentu</h2>
                 <?php if (isset($password_incorrect) && $password_incorrect) echo '<p class="text-danger m-0">Nesprávne meno alebo heslo.</p>' ?>
-                <form method="post">
+                <form method="post" class="needs-validation">
                     <div class="mb-3 mt-3">
                         <label for="email" class="form-label">Email:</label>
                         <input type="email" class="form-control" id="email" placeholder="Zadajte email" name="email"
-                               value="<?php if (DEBUG) echo 'test@example.com'?>">
+                               value="<?php if (DEBUG) echo 'test@example.com'?>" required>
                     </div>
                     <div class="mb-3">
                         <label for="pwd" class="form-label">Heslo:</label>
                         <input type="password" class="form-control" id="pwd" placeholder="Zadajte heslo" name="pswd"
-                               value="<?php if (DEBUG) echo 'heslo123' ?>">
+                               value="<?php if (DEBUG) echo 'heslo123' ?>" required>
                     </div>
 <!--                    <div class="form-check mb-3">-->
 <!--                        <label class="form-check-label">-->
