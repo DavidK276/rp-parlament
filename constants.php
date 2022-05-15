@@ -9,4 +9,4 @@ const SUCCESS = 1;
 const ERROR_USER_EXISTS = -3;
 const ERROR_UNKNOWN = -1;
 
-const DEBUG = true;
+const DEBUG = false;

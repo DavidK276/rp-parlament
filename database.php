@@ -1,10 +1,11 @@
 <?php
-$mysqli = new mysqli('127.0.0.1', 'david', 'heslo', 'parlament');
-if ($mysqli -> connect_errno) {
+try {
+    $mysqli = new mysqli('127.0.0.1', 'david', 'heslo', 'parlament');
+}
+catch (mysqli_sql_exception) {
     echo '<p class="text-danger">Nepodarilo sa nadviazať spojenie s databázou.</p>';
     exit();
-}
-else {
+} finally {
     $mysqli -> set_charset('utf8mb4');
     Admin::$mysqli = $mysqli;
     Poslanec::$mysqli = $mysqli;
